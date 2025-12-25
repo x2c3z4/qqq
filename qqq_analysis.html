@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQQ 定投分析 - 不要怕，加仓！</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7b2cbf;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border-color);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .motivation-banner {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 212, 255, 0.15));
+            border: 2px solid var(--accent-success);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .motivation-banner h2 {
+            font-size: 2rem;
+            color: var(--accent-success);
+            margin-bottom: 15px;
+        }
+
+        .motivation-banner .quote {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            font-style: italic;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .value.positive {
+            background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card .value.negative {
+            background: linear-gradient(135deg, var(--accent-danger), var(--accent-warning));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card .label {
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .card-header .icon {
+            font-size: 1.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .strategy-comparison {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .strategy-comparison h3 {
+            color: var(--accent-primary);
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .strategy-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .strategy-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .strategy-item h4 {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .strategy-item .big-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-success);
+        }
+
+        .strategy-item .detail {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .advantage-badge {
+            display: inline-block;
+            background: var(--accent-success);
+            color: var(--bg-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .dip-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .dip-table th,
+        .dip-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dip-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .dip-table tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .dip-table .major {
+            color: var(--accent-danger);
+        }
+
+        .dip-table .minor {
+            color: var(--accent-warning);
+        }
+
+        .yearly-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .yearly-table th,
+        .yearly-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .yearly-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .yearly-table .positive {
+            color: var(--accent-success);
+        }
+
+        .yearly-table .negative {
+            color: var(--accent-danger);
+        }
+
+        .lesson-box {
+            background: linear-gradient(135deg, rgba(255, 217, 61, 0.1), rgba(255, 136, 0, 0.1));
+            border-left: 4px solid var(--accent-warning);
+            padding: 25px;
+            margin-top: 20px;
+            border-radius: 0 16px 16px 0;
+        }
+
+        .lesson-box h4 {
+            color: var(--accent-warning);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .lesson-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .lesson-box li {
+            padding: 8px 0;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .lesson-box li::before {
+            content: "💡";
+            margin-right: 10px;
+        }
+
+        .buy-hold-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .buy-hold-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .buy-hold-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-primary);
+        }
+
+        .buy-hold-card.highlight {
+            border-color: var(--accent-success);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .buy-hold-card .year {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .buy-hold-card .multiple {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-success);
+        }
+
+        .buy-hold-card .value {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
+
+        .buy-hold-card .details {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .buy-hold-card .details .positive {
+            color: var(--accent-success);
+        }
+
+        .buy-hold-card .drawdown {
+            font-size: 0.75rem;
+            color: var(--accent-danger);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .strategy-row {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .buy-hold-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 QQQ 定投分析</h1>
+            <p>数据范围: 2010-01-04 至 2025-12-24</p>
+        </header>
+
+        <!-- Motivation Banner -->
+        <div class="motivation-banner">
+            <h2>🚀 不要怕！大跌是财富重新分配的机会！</h2>
+            <p class="quote">"别人恐惧时我贪婪" —— 历史数据证明，坚持定投 + 大跌加仓，长期收益更优</p>
+        </div>
+
+        <!-- Dip Alert -->
+        
+        <div class="dip-alert alert-success" style="
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 136, 0.2), 
+                var(--bg-card));
+            border: 2px solid var(--accent-success);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 10px;">⚡ 大跌预警仪表盘</h3>
+                    <div style="font-size: 1.8rem; font-weight: bold; margin-bottom: 5px;">
+                        🟢 正常区间，按计划定投
+                    </div>
+                    <div style="color: var(--text-secondary);">
+                        当前价格: $623.93 | 数据日期: 2025-12-24
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: var(--accent-success);">
+                        -1.9%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem;">52周回撤</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">52周最高</div>
+                    <div style="font-size: 1.3rem; font-weight: bold; color: var(--text-primary);">
+                        -1.9%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem;">$636.19</div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">6个月最高</div>
+                    <div style="font-size: 1.3rem; font-weight: bold; color: var(--text-primary);">
+                        -1.9%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem;">$636.19</div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">3个月最高</div>
+                    <div style="font-size: 1.3rem; font-weight: bold; color: var(--text-primary);">
+                        -1.9%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem;">$636.19</div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">1个月最高</div>
+                    <div style="font-size: 1.3rem; font-weight: bold; color: var(--text-primary);">
+                        -0.7%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem;">$628.4</div>
+                </div>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">历史最高</div>
+                    <div style="font-size: 1.3rem; font-weight: bold; color: var(--accent-danger);">
+                        -1.9%
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem;">$636.19 (2025-10-29)</div>
+                </div>
+            </div>
+        </div>
+        
+
+        <!-- Summary Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="value positive">+20.3%</div>
+                <div class="label">平均年回报</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">14/16</div>
+                <div class="label">上涨年份</div>
+            </div>
+            <div class="stat-card">
+                <div class="value positive">+55.9%</div>
+                <div class="label">2023年最佳</div>
+            </div>
+            <div class="stat-card">
+                <div class="value negative">-33.2%</div>
+                <div class="label">2022年最差</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">23</div>
+                <div class="label">重大回撤次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="value positive">+445%</div>
+                <div class="label">大跌加仓累计回报</div>
+            </div>
+        </div>
+
+        <!-- Lessons Learned (投资启示) -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+                <h3>投资启示</h3>
+                <span class="icon">🎓</span>
+            </div>
+            <div class="lesson-box">
+                <h4>从历史数据中学到的</h4>
+                <ul>
+                    <li><strong>QQQ 长期向上：</strong>14 年上涨 vs 2 年下跌，坚持就能赢</li>
+                    <li><strong>大跌是机会：</strong>历史上每次 20%+ 回撤都最终恢复并创新高</li>
+                    <li><strong>加仓更有力：</strong>大跌加仓策略比普通定投多赚 -23.3%</li>
+                    <li><strong>时间是朋友：</strong>年化收益 11.2%，复利的力量很强大</li>
+                    <li><strong>不要怕：</strong>恐惧时加仓，贪婪时减仓，逆人性才能赚大钱</li>
+                </ul>
+            </div>
+            <div class="lesson-box" style="margin-top: 15px; border-left-color: var(--accent-danger);">
+                <h4>🚨 底部割肉是最大的错误</h4>
+                <ul>
+                    <li><strong>割肉 = 确认亏损：</strong>不卖永远是浮亏，卖了才是真亏。QQQ 跌 30% 后平均 105 天恢复</li>
+                    <li><strong>最惨的时候往往是底部：</strong>当你最想卖的时候，恰恰是最不该卖的时候</li>
+                    <li><strong>错过反弹代价巨大：</strong>如果错过最好的 10 个交易日，收益会减少一半以上</li>
+                    <li><strong>没人能抄到最低点：</strong>分批买入比一次性抄底更稳妥，不用纠结时机</li>
+                </ul>
+            </div>
+            <div class="lesson-box" style="margin-top: 15px; border-left-color: var(--accent-success);">
+                <h4>💪 克服犹豫的方法</h4>
+                <ul>
+                    <li><strong>设置自动定投：</strong>让机器执行，避免人性干扰决策</li>
+                    <li><strong>写下买入理由：</strong>大跌时回顾初心，不被恐惧左右</li>
+                    <li><strong>只用闲钱投资：</strong>3年内不用的钱才有底气拿住</li>
+                    <li><strong>看长期图表：</strong>把视角从日线切到年线，波动就变成了噪音</li>
+                    <li><strong>记住这句话：</strong>「跌的时候买，涨的时候拿，疯的时候卖」</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Strategy Comparison -->
+        <div class="strategy-comparison">
+            <h3>📊 策略对比：定投 vs 大跌加仓</h3>
+            <div class="strategy-row">
+                <div class="strategy-item">
+                    <h4>月度定投 (每月 $1000)</h4>
+                    <div class="big-number">+468.6%</div>
+                    <div class="detail">
+                        投入: $192,000 → 
+                        价值: $1,091,811
+                    </div>
+                    <div class="detail">年化收益: 11.5%</div>
+                </div>
+                <div class="strategy-item">
+                    <h4>大跌加仓 (跌10%+时加倍)</h4>
+                    <div class="big-number">+445.3%</div>
+                    <div class="detail">
+                        投入: $220,000 → 
+                        价值: $1,199,673
+                    </div>
+                    <div class="detail">年化收益: 11.2% | 加仓 28 次</div>
+                    <div class="advantage-badge">优势: +-23.3%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buy and Hold Simulation -->
+        
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+                <h3>💎 如果当年买入持有至今</h3>
+                <span class="icon">🚀</span>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">假设在每年年初投入 $10,000，一直拿到今天会怎样？</p>
+            <div class="buy-hold-grid">
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2010年</div>
+                    <div class="multiple">15.5x</div>
+                    <div class="value">$154,662</div>
+                    <div class="details">
+                        <span class="positive">+1447%</span>
+                        <span>年化 18.7%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2011年</div>
+                    <div class="multiple">12.9x</div>
+                    <div class="value">$128,608</div>
+                    <div class="details">
+                        <span class="positive">+1186%</span>
+                        <span>年化 18.6%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2012年</div>
+                    <div class="multiple">12.4x</div>
+                    <div class="value">$123,855</div>
+                    <div class="details">
+                        <span class="positive">+1138%</span>
+                        <span>年化 19.7%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2013年</div>
+                    <div class="multiple">10.4x</div>
+                    <div class="value">$103,579</div>
+                    <div class="details">
+                        <span class="positive">+936%</span>
+                        <span>年化 19.7%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2014年</div>
+                    <div class="multiple">7.9x</div>
+                    <div class="value">$78,835</div>
+                    <div class="details">
+                        <span class="positive">+688%</span>
+                        <span>年化 18.8%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2015年</div>
+                    <div class="multiple">6.6x</div>
+                    <div class="value">$65,826</div>
+                    <div class="details">
+                        <span class="positive">+558%</span>
+                        <span>年化 18.7%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2016年</div>
+                    <div class="multiple">6.1x</div>
+                    <div class="value">$61,262</div>
+                    <div class="details">
+                        <span class="positive">+513%</span>
+                        <span>年化 19.9%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2017年</div>
+                    <div class="multiple">5.5x</div>
+                    <div class="value">$55,499</div>
+                    <div class="details">
+                        <span class="positive">+455%</span>
+                        <span>年化 21.0%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2018年</div>
+                    <div class="multiple">4.1x</div>
+                    <div class="value">$41,482</div>
+                    <div class="details">
+                        <span class="positive">+315%</span>
+                        <span>年化 19.5%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2019年</div>
+                    <div class="multiple">4.2x</div>
+                    <div class="value">$42,093</div>
+                    <div class="details">
+                        <span class="positive">+321%</span>
+                        <span>年化 22.9%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card highlight">
+                    <div class="year">2020年</div>
+                    <div class="multiple">3.0x</div>
+                    <div class="value">$29,913</div>
+                    <div class="details">
+                        <span class="positive">+199%</span>
+                        <span>年化 20.1%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card ">
+                    <div class="year">2021年</div>
+                    <div class="multiple">2.1x</div>
+                    <div class="value">$20,786</div>
+                    <div class="details">
+                        <span class="positive">+108%</span>
+                        <span>年化 15.9%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card ">
+                    <div class="year">2022年</div>
+                    <div class="multiple">1.6x</div>
+                    <div class="value">$15,930</div>
+                    <div class="details">
+                        <span class="positive">+59%</span>
+                        <span>年化 12.4%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -35%</div>
+                </div>
+                
+                <div class="buy-hold-card ">
+                    <div class="year">2023年</div>
+                    <div class="multiple">2.4x</div>
+                    <div class="value">$24,016</div>
+                    <div class="details">
+                        <span class="positive">+140%</span>
+                        <span>年化 34.3%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -23%</div>
+                </div>
+                
+                <div class="buy-hold-card ">
+                    <div class="year">2024年</div>
+                    <div class="multiple">1.6x</div>
+                    <div class="value">$15,669</div>
+                    <div class="details">
+                        <span class="positive">+57%</span>
+                        <span>年化 25.5%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -23%</div>
+                </div>
+                
+                <div class="buy-hold-card ">
+                    <div class="year">2025年</div>
+                    <div class="multiple">1.2x</div>
+                    <div class="value">$12,290</div>
+                    <div class="details">
+                        <span class="positive">+23%</span>
+                        <span>年化 23.6%</span>
+                    </div>
+                    <div class="drawdown">最大回撤 -23%</div>
+                </div>
+                
+            </div>
+        </div>
+        
+
+        <!-- Timing Luck Comparison -->
+        
+        <div class="strategy-comparison" style="border-color: var(--accent-warning);">
+            <h3>🎰 最差时机 vs 最佳时机：差距没你想的那么大！</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                假设你运气极差，每月都买在最高点 vs 运气极好，每月都买在最低点
+            </p>
+            <div class="strategy-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="strategy-item" style="border: 2px solid var(--accent-danger);">
+                    <h4>😱 最差时机（月内最高点）</h4>
+                    <div class="big-number" style="color: var(--accent-warning);">+446%</div>
+                    <div class="detail">$192,000 → $1,049,252</div>
+                </div>
+                <div class="strategy-item">
+                    <h4>😐 普通定投（月初）</h4>
+                    <div class="big-number" style="color: var(--accent-primary);">+469%</div>
+                    <div class="detail">$192,000 → $1,091,811</div>
+                </div>
+                <div class="strategy-item" style="border: 2px solid var(--accent-success);">
+                    <h4>🎯 最佳时机（月内最低点）</h4>
+                    <div class="big-number">+491%</div>
+                    <div class="detail">$192,000 → $1,135,466</div>
+                </div>
+            </div>
+            <div class="lesson-box" style="margin-top: 20px; border-left-color: var(--accent-primary);">
+                <h4>💡 这说明什么？</h4>
+                <ul>
+                    <li><strong>神仙 vs 韭菜差距只有 45%：</strong>就算你每次都买在最高点，长期收益依然可观！</li>
+                    <li><strong>别纠结时机：</strong>与其等"更好的入场点"，不如现在就开始定投</li>
+                    <li><strong>时间比时机重要：</strong>在市场里的时间 > 选择入场时机</li>
+                </ul>
+            </div>
+        </div>
+        
+
+        <!-- Charts -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>年度回报率</h3>
+                    <span class="icon">📊</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="yearlyReturnChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>定投收益曲线</h3>
+                    <span class="icon">📈</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="investmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>年度最大回撤</h3>
+                    <span class="icon">📉</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="drawdownChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>策略累计收益对比</h3>
+                    <span class="icon">🆚</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dip Events Table -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+                <h3>重大回撤事件</h3>
+                <span class="icon">⚠️</span>
+            </div>
+            <table class="dip-table">
+                <thead>
+                    <tr>
+                        <th>开始日期</th>
+                        <th>最低点</th>
+                        <th>恢复日期</th>
+                        <th>最大跌幅</th>
+                        <th>恢复天数</th>
+                        <th>严重程度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>2022-01-20</td>
+                        <td>2022-11-03</td>
+                        <td>2023-07-17</td>
+                        <td class="major">-35.1%</td>
+                        <td>256天</td>
+                        <td class="major">🔴 重大</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2020-02-27</td>
+                        <td>2020-03-16</td>
+                        <td>2020-05-08</td>
+                        <td class="major">-28.6%</td>
+                        <td>53天</td>
+                        <td class="major">🔴 重大</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2018-10-24</td>
+                        <td>2018-12-24</td>
+                        <td>2019-03-13</td>
+                        <td class="major">-22.8%</td>
+                        <td>79天</td>
+                        <td class="major">🔴 重大</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2025-03-10</td>
+                        <td>2025-04-08</td>
+                        <td>2025-05-13</td>
+                        <td class="major">-22.8%</td>
+                        <td>35天</td>
+                        <td class="major">🔴 重大</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2011-08-08</td>
+                        <td>2011-08-19</td>
+                        <td>2011-09-16</td>
+                        <td class="minor">-16.1%</td>
+                        <td>28天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2016-01-13</td>
+                        <td>2016-02-09</td>
+                        <td>2016-03-29</td>
+                        <td class="minor">-16.1%</td>
+                        <td>49天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2010-05-20</td>
+                        <td>2010-07-02</td>
+                        <td>2010-09-16</td>
+                        <td class="minor">-15.6%</td>
+                        <td>76天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2011-09-30</td>
+                        <td>2011-10-03</td>
+                        <td>2011-10-12</td>
+                        <td class="minor">-14.1%</td>
+                        <td>9天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2015-08-21</td>
+                        <td>2015-08-25</td>
+                        <td>2015-10-16</td>
+                        <td class="minor">-13.9%</td>
+                        <td>52天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2023-08-17</td>
+                        <td>2023-10-26</td>
+                        <td>2023-11-14</td>
+                        <td class="minor">-13.8%</td>
+                        <td>19天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2024-08-02</td>
+                        <td>2024-08-07</td>
+                        <td>2024-08-19</td>
+                        <td class="minor">-13.6%</td>
+                        <td>12天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2020-09-08</td>
+                        <td>2020-09-23</td>
+                        <td>2020-10-12</td>
+                        <td class="minor">-12.7%</td>
+                        <td>19天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2012-11-08</td>
+                        <td>2012-11-15</td>
+                        <td>2013-01-02</td>
+                        <td class="minor">-11.6%</td>
+                        <td>48天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2012-05-18</td>
+                        <td>2012-06-01</td>
+                        <td>2012-07-03</td>
+                        <td class="minor">-11.5%</td>
+                        <td>32天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2011-11-23</td>
+                        <td>2011-11-25</td>
+                        <td>2011-12-01</td>
+                        <td class="minor">-11.2%</td>
+                        <td>6天</td>
+                        <td class="minor">🟡 一般</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Yearly Details Table -->
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+                <h3>年度详情</h3>
+                <span class="icon">📅</span>
+            </div>
+            <table class="yearly-table">
+                <thead>
+                    <tr>
+                        <th>年份</th>
+                        <th>年初价格</th>
+                        <th>年末价格</th>
+                        <th>年回报</th>
+                        <th>最大回撤</th>
+                        <th>3%+跌幅天数</th>
+                        <th>5%+跌幅天数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>2010</td>
+                        <td>$40.34</td>
+                        <td>$47.77</td>
+                        <td class="positive">+18.41%</td>
+                        <td class="negative">-17.21%</td>
+                        <td>5</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2011</td>
+                        <td>$48.51</td>
+                        <td>$49.43</td>
+                        <td class="positive">+1.89%</td>
+                        <td class="negative">-16.55%</td>
+                        <td>6</td>
+                        <td>1</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2012</td>
+                        <td>$50.38</td>
+                        <td>$58.38</td>
+                        <td class="positive">+15.89%</td>
+                        <td class="negative">-13.08%</td>
+                        <td>0</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2013</td>
+                        <td>$60.24</td>
+                        <td>$79.77</td>
+                        <td class="positive">+32.43%</td>
+                        <td class="negative">-7.45%</td>
+                        <td>0</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2014</td>
+                        <td>$79.14</td>
+                        <td>$95.07</td>
+                        <td class="positive">+20.12%</td>
+                        <td class="negative">-10.26%</td>
+                        <td>1</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2015</td>
+                        <td>$94.78</td>
+                        <td>$104.04</td>
+                        <td class="positive">+9.77%</td>
+                        <td class="negative">-25.92%</td>
+                        <td>3</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2016</td>
+                        <td>$101.85</td>
+                        <td>$111.43</td>
+                        <td class="positive">+9.41%</td>
+                        <td class="negative">-13.92%</td>
+                        <td>5</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2017</td>
+                        <td>$112.42</td>
+                        <td>$147.82</td>
+                        <td class="positive">+31.49%</td>
+                        <td class="negative">-5.37%</td>
+                        <td>0</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2018</td>
+                        <td>$150.41</td>
+                        <td>$147.63</td>
+                        <td class="negative">-1.85%</td>
+                        <td class="negative">-23.28%</td>
+                        <td>10</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2019</td>
+                        <td>$148.23</td>
+                        <td>$205.15</td>
+                        <td class="positive">+38.41%</td>
+                        <td class="negative">-11.53%</td>
+                        <td>4</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2020</td>
+                        <td>$208.58</td>
+                        <td>$304.46</td>
+                        <td class="positive">+45.97%</td>
+                        <td class="negative">-30.4%</td>
+                        <td>18</td>
+                        <td>5</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2021</td>
+                        <td>$300.16</td>
+                        <td>$387.94</td>
+                        <td class="positive">+29.24%</td>
+                        <td class="negative">-12.05%</td>
+                        <td>2</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2022</td>
+                        <td>$391.68</td>
+                        <td>$261.56</td>
+                        <td class="negative">-33.22%</td>
+                        <td class="negative">-36.48%</td>
+                        <td>19</td>
+                        <td>2</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2023</td>
+                        <td>$259.8</td>
+                        <td>$405.05</td>
+                        <td class="positive">+55.91%</td>
+                        <td class="negative">-11.63%</td>
+                        <td>0</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2024</td>
+                        <td>$398.19</td>
+                        <td>$508.65</td>
+                        <td class="positive">+27.74%</td>
+                        <td class="negative">-15.9%</td>
+                        <td>3</td>
+                        <td>0</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>2025</td>
+                        <td>$507.66</td>
+                        <td>$623.93</td>
+                        <td class="positive">+22.9%</td>
+                        <td class="negative">-25.48%</td>
+                        <td>6</td>
+                        <td>2</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 数据
+        const yearlyData = [{"Year": 2010, "StartPrice": 40.34, "EndPrice": 47.77, "HighPrice": 48.21, "LowPrice": 36.48, "YearlyReturn": 18.41, "MaxDrawdown": -17.21, "DipDays3Pct": 5, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2011, "StartPrice": 48.51, "EndPrice": 49.43, "HighPrice": 52.67, "LowPrice": 43.96, "YearlyReturn": 1.89, "MaxDrawdown": -16.55, "DipDays3Pct": 6, "DipDays5Pct": 1, "IsPositive": true}, {"Year": 2012, "StartPrice": 50.38, "EndPrice": 58.38, "HighPrice": 62.88, "LowPrice": 50.07, "YearlyReturn": 15.89, "MaxDrawdown": -13.08, "DipDays3Pct": 0, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2013, "StartPrice": 60.24, "EndPrice": 79.77, "HighPrice": 79.77, "LowPrice": 59.13, "YearlyReturn": 32.43, "MaxDrawdown": -7.45, "DipDays3Pct": 0, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2014, "StartPrice": 79.14, "EndPrice": 95.07, "HighPrice": 97.47, "LowPrice": 75.94, "YearlyReturn": 20.12, "MaxDrawdown": -10.26, "DipDays3Pct": 1, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2015, "StartPrice": 94.78, "EndPrice": 104.04, "HighPrice": 107.33, "LowPrice": 78.39, "YearlyReturn": 9.77, "MaxDrawdown": -25.92, "DipDays3Pct": 3, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2016, "StartPrice": 101.85, "EndPrice": 111.43, "HighPrice": 114.28, "LowPrice": 88.21, "YearlyReturn": 9.41, "MaxDrawdown": -13.92, "DipDays3Pct": 5, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2017, "StartPrice": 112.42, "EndPrice": 147.82, "HighPrice": 150.68, "LowPrice": 111.81, "YearlyReturn": 31.49, "MaxDrawdown": -5.37, "DipDays3Pct": 0, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2018, "StartPrice": 150.41, "EndPrice": 147.63, "HighPrice": 178.96, "LowPrice": 137.3, "YearlyReturn": -1.85, "MaxDrawdown": -23.28, "DipDays3Pct": 10, "DipDays5Pct": 0, "IsPositive": false}, {"Year": 2019, "StartPrice": 148.23, "EndPrice": 205.15, "HighPrice": 207.04, "LowPrice": 143.07, "YearlyReturn": 38.41, "MaxDrawdown": -11.53, "DipDays3Pct": 4, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2020, "StartPrice": 208.58, "EndPrice": 304.46, "HighPrice": 305.38, "LowPrice": 159.49, "YearlyReturn": 45.97, "MaxDrawdown": -30.4, "DipDays3Pct": 18, "DipDays5Pct": 5, "IsPositive": true}, {"Year": 2021, "StartPrice": 300.16, "EndPrice": 387.94, "HighPrice": 398.03, "LowPrice": 288.65, "YearlyReturn": 29.24, "MaxDrawdown": -12.05, "DipDays3Pct": 2, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2022, "StartPrice": 391.68, "EndPrice": 261.56, "HighPrice": 392.26, "LowPrice": 249.16, "YearlyReturn": -33.22, "MaxDrawdown": -36.48, "DipDays3Pct": 19, "DipDays5Pct": 2, "IsPositive": false}, {"Year": 2023, "StartPrice": 259.8, "EndPrice": 405.05, "HighPrice": 408.41, "LowPrice": 255.73, "YearlyReturn": 55.91, "MaxDrawdown": -11.63, "DipDays3Pct": 0, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2024, "StartPrice": 398.19, "EndPrice": 508.65, "HighPrice": 535.57, "LowPrice": 391.02, "YearlyReturn": 27.74, "MaxDrawdown": -15.9, "DipDays3Pct": 3, "DipDays5Pct": 0, "IsPositive": true}, {"Year": 2025, "StartPrice": 507.66, "EndPrice": 623.93, "HighPrice": 636.19, "LowPrice": 400.96, "YearlyReturn": 22.9, "MaxDrawdown": -25.48, "DipDays3Pct": 6, "DipDays5Pct": 2, "IsPositive": true}];
+        const dcaHistory = [{"Date": "2010-01-04", "Year": 2010, "Price": 40.34, "SharesBought": 24.7883, "TotalShares": 24.7883, "TotalInvested": 1000, "CurrentValue": 1000.0, "Return": 0.0}, {"Date": "2011-01-03", "Year": 2011, "Price": 48.51, "SharesBought": 20.6126, "TotalShares": 313.3307, "TotalInvested": 13000, "CurrentValue": 15200.9, "Return": 16.93}, {"Date": "2012-01-03", "Year": 2012, "Price": 50.38, "SharesBought": 19.8507, "TotalShares": 554.6254, "TotalInvested": 25000, "CurrentValue": 27939.81, "Return": 11.76}, {"Date": "2013-01-02", "Year": 2013, "Price": 60.24, "SharesBought": 16.6011, "TotalShares": 761.0992, "TotalInvested": 37000, "CurrentValue": 45846.33, "Return": 23.91}, {"Date": "2014-01-02", "Year": 2014, "Price": 79.14, "SharesBought": 12.6353, "TotalShares": 938.7757, "TotalInvested": 49000, "CurrentValue": 74297.8, "Return": 51.63}, {"Date": "2015-01-02", "Year": 2015, "Price": 94.78, "SharesBought": 10.5503, "TotalShares": 1077.7498, "TotalInvested": 61000, "CurrentValue": 102153.9, "Return": 67.47}, {"Date": "2016-01-04", "Year": 2016, "Price": 101.85, "SharesBought": 9.8188, "TotalShares": 1197.9383, "TotalInvested": 73000, "CurrentValue": 122004.7, "Return": 67.13}, {"Date": "2017-01-03", "Year": 2017, "Price": 112.42, "SharesBought": 8.895, "TotalShares": 1312.4626, "TotalInvested": 85000, "CurrentValue": 147549.86, "Return": 73.59}, {"Date": "2018-01-02", "Year": 2018, "Price": 150.41, "SharesBought": 6.6484, "TotalShares": 1402.3334, "TotalInvested": 97000, "CurrentValue": 210927.2, "Return": 117.45}, {"Date": "2019-01-02", "Year": 2019, "Price": 148.23, "SharesBought": 6.7464, "TotalShares": 1476.5268, "TotalInvested": 109000, "CurrentValue": 218861.91, "Return": 100.79}, {"Date": "2020-01-02", "Year": 2020, "Price": 208.58, "SharesBought": 4.7943, "TotalShares": 1543.3953, "TotalInvested": 121000, "CurrentValue": 321921.74, "Return": 166.05}, {"Date": "2021-01-04", "Year": 2021, "Price": 300.16, "SharesBought": 3.3315, "TotalShares": 1593.4061, "TotalInvested": 133000, "CurrentValue": 478281.74, "Return": 259.61}, {"Date": "2022-01-03", "Year": 2022, "Price": 391.68, "SharesBought": 2.5531, "TotalShares": 1628.2378, "TotalInvested": 145000, "CurrentValue": 637747.34, "Return": 339.83}, {"Date": "2023-01-03", "Year": 2023, "Price": 259.8, "SharesBought": 3.8492, "TotalShares": 1668.4848, "TotalInvested": 157000, "CurrentValue": 433465.55, "Return": 176.09}, {"Date": "2024-01-02", "Year": 2024, "Price": 398.19, "SharesBought": 2.5114, "TotalShares": 1703.4184, "TotalInvested": 169000, "CurrentValue": 678287.93, "Return": 301.35}, {"Date": "2025-01-02", "Year": 2025, "Price": 507.66, "SharesBought": 1.9698, "TotalShares": 1729.5253, "TotalInvested": 181000, "CurrentValue": 878002.85, "Return": 385.08}];  // 每年采样
+        const dipHistory = [{"Date": "2010-01-04", "Year": 2010, "Price": 40.34, "Investment": 1000, "SharesBought": 24.7883, "TotalShares": 24.7883, "TotalInvested": 1000, "CurrentValue": 1000.0, "Return": 0.0, "IsDipBuy": false}, {"Date": "2011-01-03", "Year": 2011, "Price": 48.51, "Investment": 1000, "SharesBought": 20.6126, "TotalShares": 336.3519, "TotalInvested": 14000, "CurrentValue": 16317.75, "Return": 16.56, "IsDipBuy": false}, {"Date": "2012-01-03", "Year": 2012, "Price": 50.38, "Investment": 1000, "SharesBought": 19.8507, "TotalShares": 617.4123, "TotalInvested": 28000, "CurrentValue": 31102.76, "Return": 11.08, "IsDipBuy": false}, {"Date": "2013-01-02", "Year": 2013, "Price": 60.24, "Investment": 1000, "SharesBought": 16.6011, "TotalShares": 823.8861, "TotalInvested": 40000, "CurrentValue": 49628.42, "Return": 24.07, "IsDipBuy": false}, {"Date": "2014-01-02", "Year": 2014, "Price": 79.14, "Investment": 1000, "SharesBought": 12.6353, "TotalShares": 1001.5626, "TotalInvested": 52000, "CurrentValue": 79266.96, "Return": 52.44, "IsDipBuy": false}, {"Date": "2015-01-02", "Year": 2015, "Price": 94.78, "Investment": 1000, "SharesBought": 10.5503, "TotalShares": 1140.5367, "TotalInvested": 64000, "CurrentValue": 108105.12, "Return": 68.91, "IsDipBuy": false}, {"Date": "2016-01-04", "Year": 2016, "Price": 101.85, "Investment": 2000, "SharesBought": 19.6376, "TotalShares": 1280.2309, "TotalInvested": 78000, "CurrentValue": 130385.84, "Return": 67.16, "IsDipBuy": true}, {"Date": "2017-01-03", "Year": 2017, "Price": 112.42, "Investment": 1000, "SharesBought": 8.895, "TotalShares": 1394.7553, "TotalInvested": 90000, "CurrentValue": 156801.37, "Return": 74.22, "IsDipBuy": false}, {"Date": "2018-01-02", "Year": 2018, "Price": 150.41, "Investment": 1000, "SharesBought": 6.6484, "TotalShares": 1484.626, "TotalInvested": 102000, "CurrentValue": 223304.96, "Return": 118.93, "IsDipBuy": false}, {"Date": "2019-01-02", "Year": 2019, "Price": 148.23, "Investment": 1000, "SharesBought": 6.7464, "TotalShares": 1583.567, "TotalInvested": 118000, "CurrentValue": 234728.22, "Return": 98.92, "IsDipBuy": false}, {"Date": "2020-01-02", "Year": 2020, "Price": 208.58, "Investment": 1000, "SharesBought": 4.7943, "TotalShares": 1656.5663, "TotalInvested": 131000, "CurrentValue": 345526.99, "Return": 163.76, "IsDipBuy": false}, {"Date": "2021-01-04", "Year": 2021, "Price": 300.16, "Investment": 1000, "SharesBought": 3.3315, "TotalShares": 1725.1404, "TotalInvested": 147000, "CurrentValue": 517823.52, "Return": 252.26, "IsDipBuy": false}, {"Date": "2022-01-03", "Year": 2022, "Price": 391.68, "Investment": 2000, "SharesBought": 5.1062, "TotalShares": 1765.7098, "TotalInvested": 161000, "CurrentValue": 691592.27, "Return": 329.56, "IsDipBuy": true}, {"Date": "2023-01-03", "Year": 2023, "Price": 259.8, "Investment": 1000, "SharesBought": 3.8492, "TotalShares": 1835.0216, "TotalInvested": 182000, "CurrentValue": 476731.15, "Return": 161.94, "IsDipBuy": false}, {"Date": "2024-01-02", "Year": 2024, "Price": 398.19, "Investment": 1000, "SharesBought": 2.5114, "TotalShares": 1869.9553, "TotalInvested": 194000, "CurrentValue": 744601.61, "Return": 283.82, "IsDipBuy": false}, {"Date": "2025-01-02", "Year": 2025, "Price": 507.66, "Investment": 1000, "SharesBought": 1.9698, "TotalShares": 1898.2553, "TotalInvested": 207000, "CurrentValue": 963659.56, "Return": 365.54, "IsDipBuy": false}];
+
+        // 年度回报图
+        new Chart(document.getElementById('yearlyReturnChart'), {
+            type: 'bar',
+            data: {
+                labels: yearlyData.map(d => d.Year),
+                datasets: [{
+                    label: '年度回报 (%)',
+                    data: yearlyData.map(d => d.YearlyReturn),
+                    backgroundColor: yearlyData.map(d => 
+                        d.YearlyReturn >= 0 ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 107, 107, 0.7)'
+                    ),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0', callback: v => v + '%' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0' }
+                    }
+                }
+            }
+        });
+
+        // 最大回撤图
+        new Chart(document.getElementById('drawdownChart'), {
+            type: 'bar',
+            data: {
+                labels: yearlyData.map(d => d.Year),
+                datasets: [{
+                    label: '最大回撤 (%)',
+                    data: yearlyData.map(d => d.MaxDrawdown),
+                    backgroundColor: yearlyData.map(d => 
+                        d.MaxDrawdown <= -20 ? 'rgba(255, 107, 107, 0.8)' : 
+                        d.MaxDrawdown <= -10 ? 'rgba(255, 217, 61, 0.7)' : 'rgba(0, 212, 255, 0.5)'
+                    ),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0', callback: v => v + '%' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0' }
+                    }
+                }
+            }
+        });
+
+        // 定投曲线图
+        new Chart(document.getElementById('investmentChart'), {
+            type: 'line',
+            data: {
+                labels: dcaHistory.map(d => d.Date.substring(0, 7)),
+                datasets: [{
+                    label: '总投入',
+                    data: dcaHistory.map(d => d.TotalInvested),
+                    borderColor: 'rgba(160, 160, 176, 0.8)',
+                    backgroundColor: 'rgba(160, 160, 176, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }, {
+                    label: '当前价值',
+                    data: dcaHistory.map(d => d.CurrentValue),
+                    borderColor: 'rgba(0, 255, 136, 1)',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { color: '#a0a0b0' }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0', callback: v => '$' + (v/1000).toFixed(0) + 'k' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0', maxTicksLimit: 10 }
+                    }
+                }
+            }
+        });
+
+        // 策略对比图
+        new Chart(document.getElementById('comparisonChart'), {
+            type: 'line',
+            data: {
+                labels: dcaHistory.map(d => d.Date.substring(0, 7)),
+                datasets: [{
+                    label: '普通定投收益率',
+                    data: dcaHistory.map(d => d.Return),
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    tension: 0.3,
+                    fill: false
+                }, {
+                    label: '大跌加仓收益率',
+                    data: dipHistory.map(d => d.Return),
+                    borderColor: 'rgba(0, 255, 136, 1)',
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { color: '#a0a0b0' }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0', callback: v => v + '%' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0', maxTicksLimit: 10 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

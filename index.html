@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投资分析仪表盘</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-fire: #ff4500;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 50px;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .nav-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            text-decoration: none;
+            color: inherit;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .nav-card .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .nav-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .nav-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .nav-card .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-hot {
+            background: linear-gradient(135deg, var(--accent-fire), var(--accent-warning));
+            color: #000;
+        }
+
+        .badge-new {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-success);
+            border: 1px solid var(--accent-success);
+        }
+
+        /* Card specific colors */
+        .card-lof:hover { border-color: var(--accent-fire); }
+        .card-qqq:hover { border-color: var(--accent-warning); }
+        .card-us:hover { border-color: var(--accent-primary); }
+        .card-cn:hover { border-color: var(--accent-success); }
+        .card-combined:hover { border-color: #9b59b6; }
+
+        footer {
+            margin-top: 60px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 投资分析仪表盘</h1>
+    <p class="subtitle">每日自动更新 | 技术指标分析 | 套利机会发现</p>
+
+    <div class="nav-grid">
+        <a href="lof/" class="nav-card card-lof">
+            <span class="badge badge-hot">HOT</span>
+            <div class="icon">🚜</div>
+            <h2>LOF 拖拉机套利</h2>
+            <p>实时发现 LOF 基金溢价套利机会，计算拖拉机收益，自动过滤暂停申购。</p>
+        </a>
+
+        <a href="qqq_analysis.html" class="nav-card card-qqq">
+            <div class="icon">📈</div>
+            <h2>QQQ 长期分析</h2>
+            <p>纳斯达克100指数历史回测，定投模拟，抄底机会识别。</p>
+        </a>
+
+        <a href="./" class="nav-card card-combined">
+            <span class="badge badge-new">推荐</span>
+            <div class="icon">🌐</div>
+            <h2>股票综合分析</h2>
+            <p>美股 + A股综合分析，Tab 切换，技术指标评分，买卖信号。</p>
+        </a>
+
+        <a href="us/" class="nav-card card-us">
+            <div class="icon">🇺🇸</div>
+            <h2>美股分析</h2>
+            <p>科技七巨头 + 潜力股技术分析，RSI、MACD、趋势、动量评分。</p>
+        </a>
+
+        <a href="cn/" class="nav-card card-cn">
+            <div class="icon">🇨🇳</div>
+            <h2>A股分析</h2>
+            <p>A股个股 + ETF 技术分析，综合评分，买入/卖出信号。</p>
+        </a>
+    </div>
+
+    <footer>
+        <p>数据每日自动更新 | 仅供参考，投资有风险</p>
+    </footer>
+</body>
+</html>
