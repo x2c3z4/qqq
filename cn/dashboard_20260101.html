@@ -369,6 +369,7 @@
 </head>
 <body>
     <div class="container">
+        <a href="../" style="display: inline-block; margin-bottom: 15px; color: #00d4ff; text-decoration: none;">← 返回首页</a>
         <header>
             <h1>📊 A股分析仪表盘</h1>
             <p id="update-time">数据更新时间: 加载中...</p>
@@ -387,11 +388,29 @@
             </div>
         </div>
 
+        <!-- Portfolio Recommendation -->
+        <div class="card" id="portfolio-card" style="display: none; margin-bottom: 30px; border-left: 4px solid var(--accent-primary);">
+            <div class="card-header">
+                <h3>💼 推荐持仓组合</h3>
+                <span class="icon">🥧</span>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div style="width: 100%; max-width: 300px; height: 300px; position: relative;">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+                <div id="portfolio-list" style="display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </div>
+
         <!-- Signals Summary -->
         <div class="grid" style="margin-bottom: 30px;">
             <div class="card" style="border-left: 4px solid var(--accent-success);">
                 <div class="card-header">
-                    <h3>🟢 买入候选</h3>
+                    <h3>⚡️ 今日买入信号</h3>
                     <span class="icon">📈</span>
                 </div>
                 <div id="buy-candidates" class="signal-list">
@@ -400,7 +419,7 @@
             </div>
             <div class="card" style="border-left: 4px solid var(--accent-danger);">
                 <div class="card-header">
-                    <h3>🔴 卖出候选</h3>
+                    <h3>⚠️ 今日卖出信号</h3>
                     <span class="icon">📉</span>
                 </div>
                 <div id="sell-candidates" class="signal-list">
@@ -498,7 +517,7 @@
 
     <script>
         // Stock analysis data (will be populated by Python)
-        const stockData = [{"symbol": "002050.SZ", "name": "三花智控", "close": 55.31, "daily_change": 5.352380952380953, "RSI": 77.22878625134261, "MACD": 2.1140529063694182, "MACD_DIF": 1.7783372652948728, "MACD_DEA": 0.7213108121101637, "MA5": 50.08, "MA10": 47.213, "MA20": 46.101000000000006, "MomentumRate": 25.647432985006812, "VolumeRatio": 2.1393764596133162, "total_score": 84.13668823672737, "RSI_score": 30.361618331543184, "MACD_score": 96.14052906369417, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 94.18129378839949, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "688041.SH", "name": "海光信息", "close": 224.41, "daily_change": -0.26665481534153823, "RSI": 60.321622094039505, "MACD": 4.241998725581719, "MACD_DIF": 1.306209088512503, "MACD_DEA": -0.8147902742783564, "MA5": 221.33999999999997, "MA10": 216.808, "MA20": 214.3735, "MomentumRate": 8.35828102366007, "VolumeRatio": 1.0744662889944991, "total_score": 78.29395660485217, "RSI_score": 49.678377905960495, "MACD_score": 100, "Trend_score": 100, "Momentum_score": 91.79140511830035, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "综合得分高+MACD金叉+RSI正常"}, {"symbol": "000933.SZ", "name": "神火股份", "close": 27.47, "daily_change": 1.0669610007358221, "RSI": 61.801242236024834, "MACD": 0.1507668540743774, "MACD_DIF": 0.5337615241937286, "MACD_DEA": 0.4583780971565399, "MA5": 27.034, "MA10": 26.734999999999996, "MA20": 26.392000000000003, "MomentumRate": 7.979559748427663, "VolumeRatio": 1.4235444086880733, "total_score": 75.46211146149989, "RSI_score": 48.198757763975166, "MACD_score": 76.50766854074378, "Trend_score": 100, "Momentum_score": 89.89779874213832, "Volume_score": 62.7063322606422, "signal": "BUY", "signal_reason": "综合得分高+MACD金叉+RSI正常"}, {"symbol": "513310.SH", "name": "中韩半导体ETF", "close": 2.577, "daily_change": -1.3777267508610858, "RSI": 58.823529411764696, "MACD": 0.03734144595734955, "MACD_DIF": 0.02472852493381028, "MACD_DEA": 0.006057801955135509, "MA5": 2.5650000000000004, "MA10": 2.5022, "MA20": 2.4886, "MomentumRate": 7.509386733416779, "VolumeRatio": 0.8670118114299004, "total_score": 72.81936374297854, "RSI_score": 51.176470588235304, "MACD_score": 75.3734144595735, "Trend_score": 100, "Momentum_score": 87.54693366708389, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "603993.SH", "name": "洛阳钼业", "close": 20.0, "daily_change": 2.4590163934426146, "RSI": 73.09090909090908, "MACD": 0.2292712714764129, "MACD_DIF": 0.7359605716155677, "MACD_DEA": 0.6213249358773613, "MA5": 19.369999999999997, "MA10": 18.895, "MA20": 18.3805, "MomentumRate": 11.11111111111111, "VolumeRatio": 1.106591364632947, "total_score": 72.6343001187104, "RSI_score": 35.8787878787879, "MACD_score": 77.29271271476414, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "562500.SH", "name": "机器人ETF", "close": 1.019, "daily_change": -0.4882812500000111, "RSI": 68.39080459770115, "MACD": 0.019818194377950512, "MACD_DIF": 0.008895560953608106, "MACD_DEA": -0.0010135362353671507, "MA5": 1.0004, "MA10": 0.9724999999999999, "MA20": 0.9650000000000001, "MomentumRate": 8.519701810436631, "VolumeRatio": 0.8732267483552667, "total_score": 71.8811772796523, "RSI_score": 41.60919540229885, "MACD_score": 75.1981819437795, "Trend_score": 100, "Momentum_score": 92.59850905218315, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "600938.SH", "name": "中国海油", "close": 30.18, "daily_change": 1.0716677829872845, "RSI": 71.18279569892474, "MACD": 0.3781109032952859, "MACD_DIF": 0.2697476426329537, "MACD_DEA": 0.08069219098531075, "MA5": 29.083999999999996, "MA10": 28.564999999999998, "MA20": 28.490000000000002, "MomentumRate": 6.831858407079645, "VolumeRatio": 1.2156978160821987, "total_score": 71.5668549237835, "RSI_score": 38.422939068100355, "MACD_score": 78.78110903295286, "Trend_score": 100, "Momentum_score": 84.15929203539822, "Volume_score": 56.470934482465964, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "600038.SH", "name": "中直股份", "close": 36.13, "daily_change": 1.062937062937075, "RSI": 73.17073170731696, "MACD": 0.2781178064466527, "MACD_DIF": 0.06410387148083885, "MACD_DEA": -0.0749550317424875, "MA5": 35.864, "MA10": 35.575, "MA20": 35.303999999999995, "MomentumRate": 3.199085975435603, "VolumeRatio": 1.3733867727615705, "total_score": 68.15011376961381, "RSI_score": 35.772357723577386, "MACD_score": 77.78117806446653, "Trend_score": 100, "Momentum_score": 65.99542987717801, "Volume_score": 61.201603182847116, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "600660.SH", "name": "福耀玻璃", "close": 64.77, "daily_change": 0.41860465116279055, "RSI": 75.03828483920364, "MACD": 0.8094066798783786, "MACD_DIF": -0.17808254739163942, "MACD_DEA": -0.5827858873308287, "MA5": 63.936, "MA10": 63.263, "MA20": 62.8365, "MomentumRate": 4.333118556701027, "VolumeRatio": 0.9780338385651478, "total_score": 67.60838929267014, "RSI_score": 33.282286881061815, "MACD_score": 83.09406679878379, "Trend_score": 100, "Momentum_score": 71.66559278350513, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "002594.SZ", "name": "比亚迪", "close": 97.72, "daily_change": -2.0350877192982453, "RSI": 54.624456859093726, "MACD": 1.300170500495213, "MACD_DIF": 0.318690108746182, "MACD_DEA": -0.3313951415014246, "MA5": 98.506, "MA10": 96.389, "MA20": 96.11800000000001, "MomentumRate": 2.6362777019220727, "VolumeRatio": 0.9016967680650917, "total_score": 66.31172733109375, "RSI_score": 55.375543140906274, "MACD_score": 88.00170500495213, "Trend_score": 75.0, "Momentum_score": 63.181388509610365, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "002463.SZ", "name": "沪电股份", "close": 73.07, "daily_change": -2.0378066764981995, "RSI": 54.9868272487768, "MACD": 0.7051071790980314, "MACD_DIF": 1.2718697053486068, "MACD_DEA": 0.919316115799591, "MA5": 73.724, "MA10": 72.027, "MA20": 71.374, "MomentumRate": 1.4861111111111016, "VolumeRatio": 0.8714393950454639, "total_score": 63.89896001955181, "RSI_score": 55.0131727512232, "MACD_score": 82.05107179098032, "Trend_score": 75.0, "Momentum_score": 57.43055555555551, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "159813.SZ", "name": "半导体ETF", "close": 1.109, "daily_change": -1.2466607301869992, "RSI": 57.865168539325836, "MACD": 0.00898809410369479, "MACD_DIF": 0.008240197974326291, "MACD_DEA": 0.0037461509224788964, "MA5": 1.1138, "MA10": 1.1022, "MA20": 1.09245, "MomentumRate": 3.066914498141256, "VolumeRatio": 1.0505671280049265, "total_score": 63.511856978483486, "RSI_score": 52.134831460674164, "MACD_score": 75.08988094103695, "Trend_score": 75.0, "Momentum_score": 65.33457249070628, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "515880.SH", "name": "通信ETF", "close": 3.08, "daily_change": -1.1235955056179803, "RSI": 59.83263598326359, "MACD": 0.005539679290253285, "MACD_DIF": 0.10071247381137605, "MACD_DEA": 0.0979426341662494, "MA5": 3.1104, "MA10": 3.071, "MA20": 2.99585, "MomentumRate": 3.2517599731813602, "VolumeRatio": 0.9769900031786884, "total_score": 63.296312135109154, "RSI_score": 50.16736401673641, "MACD_score": 75.05539679290253, "Trend_score": 75.0, "Momentum_score": 66.25879986590681, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "588940.SH", "name": "科创ETF", "close": 1.381, "daily_change": -1.145311381531855, "RSI": 54.75113122171944, "MACD": 0.010003371298959706, "MACD_DIF": 0.0021178999762392348, "MACD_DEA": -0.0028837856732406185, "MA5": 1.386, "MA10": 1.3751, "MA20": 1.36935, "MomentumRate": 1.5441176470588167, "VolumeRatio": 1.160348212738927, "total_score": 62.61389814531285, "RSI_score": 55.24886877828056, "MACD_score": 75.1000337129896, "Trend_score": 75.0, "Momentum_score": 57.72058823529409, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "300274.SZ", "name": "阳光电源", "close": 171.04, "daily_change": -4.484279890545595, "RSI": 47.7330923331827, "MACD": 1.3668921403013168, "MACD_DIF": -0.7517805291882951, "MACD_DEA": -1.4352265993389535, "MA5": 174.958, "MA10": 170.158, "MA20": 173.10999999999999, "MomentumRate": 0.9085545722713818, "VolumeRatio": 0.7637383693618705, "total_score": 62.513290170066256, "RSI_score": 62.2669076668173, "MACD_score": 88.66892140301317, "Trend_score": 50.0, "Momentum_score": 54.54277286135691, "Volume_score": 57.08784891914389, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "600489.SH", "name": "中金黄金", "close": 23.36, "daily_change": -0.04278990158322893, "RSI": 60.955056179775255, "MACD": 0.028782821160131533, "MACD_DIF": 0.36179574589117536, "MACD_DEA": 0.3474043353111096, "MA5": 23.25, "MA10": 23.377, "MA20": 22.814, "MomentumRate": 3.2714412024756787, "VolumeRatio": 0.6474225641522546, "total_score": 60.25346022392736, "RSI_score": 49.044943820224745, "MACD_score": 75.28782821160132, "Trend_score": 50.0, "Momentum_score": 66.3572060123784, "Volume_score": 60.57732307543236, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "601138.SH", "name": "工业富联", "close": 62.05, "daily_change": -3.3940526233847246, "RSI": 49.500599280862964, "MACD": 0.8306313267001313, "MACD_DIF": 0.09239067355265007, "MACD_DEA": -0.3229249897974156, "MA5": 64.416, "MA10": 62.727999999999994, "MA20": 62.5025, "MomentumRate": 0.8943089430894262, "VolumeRatio": 0.8225063151033039, "total_score": 59.6554517403171, "RSI_score": 60.499400719137036, "MACD_score": 83.30631326700131, "Trend_score": 50.0, "Momentum_score": 54.47154471544713, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "300059.SZ", "name": "东方财富", "close": 23.18, "daily_change": -1.0670081092616357, "RSI": 56.15942028985508, "MACD": 0.22989011230244571, "MACD_DIF": -0.14149477326311555, "MACD_DEA": -0.2564398294143384, "MA5": 23.381999999999998, "MA10": 23.207, "MA20": 23.1195, "MomentumRate": 0.3897791251624073, "VolumeRatio": 0.7595894790569476, "total_score": 58.060138417454596, "RSI_score": 53.84057971014492, "MACD_score": 77.29890112302445, "Trend_score": 50.0, "Momentum_score": 51.948895625812035, "Volume_score": 57.21231562829157, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "601127.SH", "name": "赛力斯", "close": 120.96, "daily_change": -0.31316960606561084, "RSI": 46.30650496141125, "MACD": 1.4393706639946497, "MACD_DIF": -3.0116501969617246, "MACD_DEA": -3.7313355289590495, "MA5": 120.48799999999999, "MA10": 120.33, "MA20": 121.92249999999999, "MomentumRate": -0.4853969559851941, "VolumeRatio": 1.420216804902138, "total_score": 58.030959355211166, "RSI_score": 63.69349503858875, "MACD_score": 89.3937066399465, "Trend_score": 75.0, "Momentum_score": 47.573015220074026, "Volume_score": 14.494579877446547, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "600036.SH", "name": "招商银行", "close": 42.1, "daily_change": -0.42573320719015983, "RSI": 57.0945945945947, "MACD": 0.042499551179045136, "MACD_DIF": -0.17071691609874762, "MACD_DEA": -0.19196669168827019, "MA5": 41.946000000000005, "MA10": 41.96, "MA20": 42.1315, "MomentumRate": 1.3969171483622307, "VolumeRatio": 0.9049689662121534, "total_score": 57.062997331801384, "RSI_score": 52.9054054054053, "MACD_score": 75.42499551179046, "Trend_score": 50.0, "Momentum_score": 56.98458574181115, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "159682.SZ", "name": "创业50ETF", "close": 1.477, "daily_change": -1.4018691588784993, "RSI": 51.7110266159696, "MACD": 0.003188927403953448, "MACD_DIF": 0.01605163316458813, "MACD_DEA": 0.014457169462611406, "MA5": 1.4916, "MA10": 1.4785, "MA20": 1.4697, "MomentumRate": 0.3396739130434861, "VolumeRatio": 0.8796670906458164, "total_score": 57.00384644465747, "RSI_score": 58.2889733840304, "MACD_score": 75.03188927403953, "Trend_score": 50.0, "Momentum_score": 51.69836956521743, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "688050.SH", "name": "香农芯创", "close": 60.66, "daily_change": -1.5259740259740306, "RSI": 58.03964757709246, "MACD": 0.3084846670175938, "MACD_DIF": -0.30625139939308355, "MACD_DEA": -0.46049373290188045, "MA5": 62.048, "MA10": 62.013, "MA20": 61.47700000000001, "MomentumRate": -2.413127413127413, "VolumeRatio": 1.0330549716024577, "total_score": 53.59591240548929, "RSI_score": 51.96035242290754, "MACD_score": 78.08484667017593, "Trend_score": 50.0, "Momentum_score": 37.93436293436294, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "300308.SZ", "name": "中际旭创", "close": 610.0, "daily_change": -3.4810126582278444, "RSI": 55.309309034296454, "MACD": -2.0332343949037366, "MACD_DIF": 29.27538168506601, "MACD_DEA": 30.291998882517877, "MA5": 625.36, "MA10": 614.26, "MA20": 594.4295, "MomentumRate": 3.3933353673005833, "VolumeRatio": 0.9318543986795659, "total_score": 45.26500477063382, "RSI_score": 54.690690965703546, "MACD_score": 4.667656050962634, "Trend_score": 50.0, "Momentum_score": 66.96667683650291, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏空，建议观望"}, {"symbol": "002371.SZ", "name": "北方华创", "close": 459.08, "daily_change": 0.017429193899776152, "RSI": 53.28788212007916, "MACD": -2.775637881381641, "MACD_DIF": 8.753584889929414, "MACD_DEA": 10.141403830620234, "MA5": 460.61800000000005, "MA10": 462.2370000000001, "MA20": 457.3235000000001, "MomentumRate": 3.22435580339074, "VolumeRatio": 1.1734450089248936, "total_score": 39.56677937937491, "RSI_score": 56.71211787992084, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 66.1217790169537, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}, {"symbol": "159509.SZ", "name": "纳指科技ETF", "close": 2.29, "daily_change": -0.8658008658008698, "RSI": 38.198757763975195, "MACD": -0.01641795153418355, "MACD_DIF": 0.013714713893917985, "MACD_DEA": 0.02192368966100976, "MA5": 2.3042000000000002, "MA10": 2.3103000000000002, "MA20": 2.323, "MomentumRate": -0.9943795936013892, "VolumeRatio": 1.0652217721621022, "total_score": 38.333032950535205, "RSI_score": 71.8012422360248, "MACD_score": 24.835820484658164, "Trend_score": 0, "Momentum_score": 45.02810203199306, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}, {"symbol": "518680.SH", "name": "金ETF", "close": 9.717, "daily_change": -0.7152344947379152, "RSI": 57.605421686747, "MACD": -0.029954273653147345, "MACD_DIF": 0.13424913762359836, "MACD_DEA": 0.14922627445017203, "MA5": 9.9152, "MA10": 9.9109, "MA20": 9.7446, "MomentumRate": -0.11307565789472895, "VolumeRatio": 1.9060143642442091, "total_score": 35.77585963622854, "RSI_score": 52.394578313253, "MACD_score": 24.700457263468525, "Trend_score": 50.0, "Momentum_score": 49.43462171052636, "Volume_score": 2.3496408938947724, "signal": "HOLD", "signal_reason": "指标中性偏空，建议观望"}, {"symbol": "300750.SZ", "name": "宁德时代", "close": 367.26, "daily_change": -0.5254604550379183, "RSI": 30.847875903402112, "MACD": -2.765321488243954, "MACD_DIF": -3.2862167481150095, "MACD_DEA": -1.9035560039930326, "MA5": 370.642, "MA10": 372.475, "MA20": 379.389, "MomentumRate": -4.214699285378964, "VolumeRatio": 0.726433934879943, "total_score": 33.25712192466096, "RSI_score": 79.15212409659789, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 28.92650357310518, "Volume_score": 58.20698195360171, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}, {"symbol": "300502.SZ", "name": "新易盛", "close": 430.88, "daily_change": -3.390134529147981, "RSI": 54.370703814100615, "MACD": -5.063883720476497, "MACD_DIF": 21.759854891467853, "MACD_DEA": 24.2917967517061, "MA5": 442.934, "MA10": 444.89700000000005, "MA20": 429.063, "MomentumRate": -3.411791078233586, "VolumeRatio": 1.0715660445464252, "total_score": 32.71406815894629, "RSI_score": 55.629296185899385, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 32.94104460883207, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}];
+        const stockData = [{"symbol": "002050.SZ", "name": "三花智控", "close": 55.31, "daily_change": 5.352380952380953, "RSI": 77.22878625134261, "MACD": 2.1140529063694182, "MACD_DIF": 1.7783372652948728, "MACD_DEA": 0.7213108121101637, "MA5": 50.08, "MA10": 47.213, "MA20": 46.101000000000006, "MomentumRate": 25.647432985006812, "VolumeRatio": 2.1393764596133162, "total_score": 84.13668823672737, "RSI_score": 30.361618331543184, "MACD_score": 96.14052906369417, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 94.18129378839949, "signal": "SELL", "signal_reason": "⚠️ RSI超买(>75)，A股必须止盈"}, {"symbol": "000933.SZ", "name": "神火股份", "close": 27.47, "daily_change": 1.0669610007358221, "RSI": 61.801242236024834, "MACD": 0.1507668540743774, "MACD_DIF": 0.5337615241937286, "MACD_DEA": 0.4583780971565399, "MA5": 27.034, "MA10": 26.734999999999996, "MA20": 26.392000000000003, "MomentumRate": 7.979559748427663, "VolumeRatio": 1.4235444086880733, "total_score": 75.46211146149989, "RSI_score": 48.198757763975166, "MACD_score": 76.50766854074378, "Trend_score": 100, "Momentum_score": 89.89779874213832, "Volume_score": 62.7063322606422, "signal": "BUY", "signal_reason": "🇨🇳 A股买入: 放量+趋势+MACD共振【放量+均线多头+高分】"}, {"symbol": "513310.SH", "name": "中韩半导体ETF", "close": 2.577, "daily_change": -1.3777267508610858, "RSI": 58.823529411764696, "MACD": 0.03734144595734955, "MACD_DIF": 0.02472852493381028, "MACD_DEA": 0.006057801955135509, "MA5": 2.5650000000000004, "MA10": 2.5022, "MA20": 2.4886, "MomentumRate": 7.509386733416779, "VolumeRatio": 0.8670118114299004, "total_score": 72.81936374297854, "RSI_score": 51.176470588235304, "MACD_score": 75.3734144595735, "Trend_score": 100, "Momentum_score": 87.54693366708389, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "603993.SH", "name": "洛阳钼业", "close": 20.0, "daily_change": 2.4590163934426146, "RSI": 73.09090909090908, "MACD": 0.2292712714764129, "MACD_DIF": 0.7359605716155677, "MACD_DEA": 0.6213249358773613, "MA5": 19.369999999999997, "MA10": 18.895, "MA20": 18.3805, "MomentumRate": 11.11111111111111, "VolumeRatio": 1.106591364632947, "total_score": 72.6343001187104, "RSI_score": 35.8787878787879, "MACD_score": 77.29271271476414, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "562500.SH", "name": "机器人ETF", "close": 1.019, "daily_change": -0.4882812500000111, "RSI": 68.39080459770115, "MACD": 0.019818194377950512, "MACD_DIF": 0.008895560953608106, "MACD_DEA": -0.0010135362353671507, "MA5": 1.0004, "MA10": 0.9724999999999999, "MA20": 0.9650000000000001, "MomentumRate": 8.519701810436631, "VolumeRatio": 0.8732267483552667, "total_score": 71.8811772796523, "RSI_score": 41.60919540229885, "MACD_score": 75.1981819437795, "Trend_score": 100, "Momentum_score": 92.59850905218315, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "600938.SH", "name": "中国海油", "close": 30.18, "daily_change": 1.0716677829872845, "RSI": 71.18279569892474, "MACD": 0.3781109032952859, "MACD_DIF": 0.2697476426329537, "MACD_DEA": 0.08069219098531075, "MA5": 29.083999999999996, "MA10": 28.564999999999998, "MA20": 28.490000000000002, "MomentumRate": 6.831858407079645, "VolumeRatio": 1.2156978160821987, "total_score": 71.5668549237835, "RSI_score": 38.422939068100355, "MACD_score": 78.78110903295286, "Trend_score": 100, "Momentum_score": 84.15929203539822, "Volume_score": 56.470934482465964, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "600038.SH", "name": "中直股份", "close": 36.13, "daily_change": 1.062937062937075, "RSI": 73.17073170731696, "MACD": 0.2781178064466527, "MACD_DIF": 0.06410387148083885, "MACD_DEA": -0.0749550317424875, "MA5": 35.864, "MA10": 35.575, "MA20": 35.303999999999995, "MomentumRate": 3.199085975435603, "VolumeRatio": 1.3733867727615705, "total_score": 68.15011376961381, "RSI_score": 35.772357723577386, "MACD_score": 77.78117806446653, "Trend_score": 100, "Momentum_score": 65.99542987717801, "Volume_score": 61.201603182847116, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "600660.SH", "name": "福耀玻璃", "close": 64.77, "daily_change": 0.41860465116279055, "RSI": 75.03828483920364, "MACD": 0.8094066798783786, "MACD_DIF": -0.17808254739163942, "MACD_DEA": -0.5827858873308287, "MA5": 63.936, "MA10": 63.263, "MA20": 62.8365, "MomentumRate": 4.333118556701027, "VolumeRatio": 0.9780338385651478, "total_score": 67.60838929267014, "RSI_score": 33.282286881061815, "MACD_score": 83.09406679878379, "Trend_score": 100, "Momentum_score": 71.66559278350513, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ RSI超买(>75)，A股必须止盈"}, {"symbol": "002594.SZ", "name": "比亚迪", "close": 97.72, "daily_change": -2.0350877192982453, "RSI": 54.624456859093726, "MACD": 1.300170500495213, "MACD_DIF": 0.318690108746182, "MACD_DEA": -0.3313951415014246, "MA5": 98.506, "MA10": 96.389, "MA20": 96.11800000000001, "MomentumRate": 2.6362777019220727, "VolumeRatio": 0.9016967680650917, "total_score": 66.31172733109375, "RSI_score": 55.375543140906274, "MACD_score": 88.00170500495213, "Trend_score": 75.0, "Momentum_score": 63.181388509610365, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "002463.SZ", "name": "沪电股份", "close": 73.07, "daily_change": -2.0378066764981995, "RSI": 54.9868272487768, "MACD": 0.7051071790980314, "MACD_DIF": 1.2718697053486068, "MACD_DEA": 0.919316115799591, "MA5": 73.724, "MA10": 72.027, "MA20": 71.374, "MomentumRate": 1.4861111111111016, "VolumeRatio": 0.8714393950454639, "total_score": 63.89896001955181, "RSI_score": 55.0131727512232, "MACD_score": 82.05107179098032, "Trend_score": 75.0, "Momentum_score": 57.43055555555551, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "515880.SH", "name": "通信ETF", "close": 3.08, "daily_change": -1.1235955056179803, "RSI": 59.83263598326359, "MACD": 0.005539679290253285, "MACD_DIF": 0.10071247381137605, "MACD_DEA": 0.0979426341662494, "MA5": 3.1104, "MA10": 3.071, "MA20": 2.99585, "MomentumRate": 3.2517599731813602, "VolumeRatio": 0.9769900031786884, "total_score": 63.296312135109154, "RSI_score": 50.16736401673641, "MACD_score": 75.05539679290253, "Trend_score": 75.0, "Momentum_score": 66.25879986590681, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "588940.SH", "name": "科创ETF", "close": 1.381, "daily_change": -1.145311381531855, "RSI": 54.75113122171944, "MACD": 0.010003371298959706, "MACD_DIF": 0.0021178999762392348, "MACD_DEA": -0.0028837856732406185, "MA5": 1.386, "MA10": 1.3751, "MA20": 1.36935, "MomentumRate": 1.5441176470588167, "VolumeRatio": 1.160348212738927, "total_score": 62.61389814531285, "RSI_score": 55.24886877828056, "MACD_score": 75.1000337129896, "Trend_score": 75.0, "Momentum_score": 57.72058823529409, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "🇨🇳 A股趋势买入: 均线多头+量能配合"}, {"symbol": "300274.SZ", "name": "阳光电源", "close": 171.04, "daily_change": -4.484279890545595, "RSI": 47.7330923331827, "MACD": 1.3668921403013168, "MACD_DIF": -0.7517805291882951, "MACD_DEA": -1.4352265993389535, "MA5": 174.958, "MA10": 170.158, "MA20": 173.10999999999999, "MomentumRate": 0.9085545722713818, "VolumeRatio": 0.7637383693618705, "total_score": 62.513290170066256, "RSI_score": 62.2669076668173, "MACD_score": 88.66892140301317, "Trend_score": 50.0, "Momentum_score": 54.54277286135691, "Volume_score": 57.08784891914389, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "600489.SH", "name": "中金黄金", "close": 23.36, "daily_change": -0.04278990158322893, "RSI": 60.955056179775255, "MACD": 0.028782821160131533, "MACD_DIF": 0.36179574589117536, "MACD_DEA": 0.3474043353111096, "MA5": 23.25, "MA10": 23.377, "MA20": 22.814, "MomentumRate": 3.2714412024756787, "VolumeRatio": 0.6474225641522546, "total_score": 60.25346022392736, "RSI_score": 49.044943820224745, "MACD_score": 75.28782821160132, "Trend_score": 50.0, "Momentum_score": 66.3572060123784, "Volume_score": 60.57732307543236, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "601138.SH", "name": "工业富联", "close": 62.05, "daily_change": -3.3940526233847246, "RSI": 49.500599280862964, "MACD": 0.8306313267001313, "MACD_DIF": 0.09239067355265007, "MACD_DEA": -0.3229249897974156, "MA5": 64.416, "MA10": 62.727999999999994, "MA20": 62.5025, "MomentumRate": 0.8943089430894262, "VolumeRatio": 0.8225063151033039, "total_score": 59.6554517403171, "RSI_score": 60.499400719137036, "MACD_score": 83.30631326700131, "Trend_score": 50.0, "Momentum_score": 54.47154471544713, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "300059.SZ", "name": "东方财富", "close": 23.18, "daily_change": -1.0670081092616357, "RSI": 56.15942028985508, "MACD": 0.22989011230244571, "MACD_DIF": -0.14149477326311555, "MACD_DEA": -0.2564398294143384, "MA5": 23.381999999999998, "MA10": 23.207, "MA20": 23.1195, "MomentumRate": 0.3897791251624073, "VolumeRatio": 0.7595894790569476, "total_score": 58.060138417454596, "RSI_score": 53.84057971014492, "MACD_score": 77.29890112302445, "Trend_score": 50.0, "Momentum_score": 51.948895625812035, "Volume_score": 57.21231562829157, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "601127.SH", "name": "赛力斯", "close": 120.96, "daily_change": -0.31316960606561084, "RSI": 46.30650496141125, "MACD": 1.4393706639946497, "MACD_DIF": -3.0116501969617246, "MACD_DEA": -3.7313355289590495, "MA5": 120.48799999999999, "MA10": 120.33, "MA20": 121.92249999999999, "MomentumRate": -0.4853969559851941, "VolumeRatio": 1.420216804902138, "total_score": 58.030959355211166, "RSI_score": 63.69349503858875, "MACD_score": 89.3937066399465, "Trend_score": 75.0, "Momentum_score": 47.573015220074026, "Volume_score": 14.494579877446547, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "600036.SH", "name": "招商银行", "close": 42.1, "daily_change": -0.42573320719015983, "RSI": 57.0945945945947, "MACD": 0.042499551179045136, "MACD_DIF": -0.17071691609874762, "MACD_DEA": -0.19196669168827019, "MA5": 41.946000000000005, "MA10": 41.96, "MA20": 42.1315, "MomentumRate": 1.3969171483622307, "VolumeRatio": 0.9049689662121534, "total_score": 57.062997331801384, "RSI_score": 52.9054054054053, "MACD_score": 75.42499551179046, "Trend_score": 50.0, "Momentum_score": 56.98458574181115, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "688050.SH", "name": "香农芯创", "close": 60.66, "daily_change": -1.5259740259740306, "RSI": 58.03964757709246, "MACD": 0.3084846670175938, "MACD_DIF": -0.30625139939308355, "MACD_DEA": -0.46049373290188045, "MA5": 62.048, "MA10": 62.013, "MA20": 61.47700000000001, "MomentumRate": -2.413127413127413, "VolumeRatio": 1.0330549716024577, "total_score": 53.59591240548929, "RSI_score": 51.96035242290754, "MACD_score": 78.08484667017593, "Trend_score": 50.0, "Momentum_score": 37.93436293436294, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "300308.SZ", "name": "中际旭创", "close": 610.0, "daily_change": -3.4810126582278444, "RSI": 55.309309034296454, "MACD": -2.0332343949037366, "MACD_DIF": 29.27538168506601, "MACD_DEA": 30.291998882517877, "MA5": 625.36, "MA10": 614.26, "MA20": 594.4295, "MomentumRate": 3.3933353673005833, "VolumeRatio": 0.9318543986795659, "total_score": 45.26500477063382, "RSI_score": 54.690690965703546, "MACD_score": 4.667656050962634, "Trend_score": 50.0, "Momentum_score": 66.96667683650291, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "002371.SZ", "name": "北方华创", "close": 459.08, "daily_change": 0.017429193899776152, "RSI": 53.28788212007916, "MACD": -2.775637881381641, "MACD_DIF": 8.753584889929414, "MACD_DEA": 10.141403830620234, "MA5": 460.61800000000005, "MA10": 462.2370000000001, "MA20": 457.3235000000001, "MomentumRate": 3.22435580339074, "VolumeRatio": 1.1734450089248936, "total_score": 39.56677937937491, "RSI_score": 56.71211787992084, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 66.1217790169537, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "159509.SZ", "name": "纳指科技ETF", "close": 2.29, "daily_change": -0.8658008658008698, "RSI": 38.198757763975195, "MACD": -0.01641795153418355, "MACD_DIF": 0.013714713893917985, "MACD_DEA": 0.02192368966100976, "MA5": 2.3042000000000002, "MA10": 2.3103000000000002, "MA20": 2.323, "MomentumRate": -0.9943795936013892, "VolumeRatio": 1.0652217721621022, "total_score": 38.333032950535205, "RSI_score": 71.8012422360248, "MACD_score": 24.835820484658164, "Trend_score": 0, "Momentum_score": 45.02810203199306, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "518680.SH", "name": "金ETF", "close": 9.717, "daily_change": -0.7152344947379152, "RSI": 57.605421686747, "MACD": -0.029954273653147345, "MACD_DIF": 0.13424913762359836, "MACD_DEA": 0.14922627445017203, "MA5": 9.9152, "MA10": 9.9109, "MA20": 9.7446, "MomentumRate": -0.11307565789472895, "VolumeRatio": 1.9060143642442091, "total_score": 35.77585963622854, "RSI_score": 52.394578313253, "MACD_score": 24.700457263468525, "Trend_score": 50.0, "Momentum_score": 49.43462171052636, "Volume_score": 2.3496408938947724, "signal": "HOLD", "signal_reason": "MACD未金叉，等待确认"}, {"symbol": "300750.SZ", "name": "宁德时代", "close": 367.26, "daily_change": -0.5254604550379183, "RSI": 30.847875903402112, "MACD": -2.765321488243954, "MACD_DIF": -3.2862167481150095, "MACD_DEA": -1.9035560039930326, "MA5": 370.642, "MA10": 372.475, "MA20": 379.389, "MomentumRate": -4.214699285378964, "VolumeRatio": 0.726433934879943, "total_score": 33.25712192466096, "RSI_score": 79.15212409659789, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 28.92650357310518, "Volume_score": 58.20698195360171, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300502.SZ", "name": "新易盛", "close": 430.88, "daily_change": -3.390134529147981, "RSI": 54.370703814100615, "MACD": -5.063883720476497, "MACD_DIF": 21.759854891467853, "MACD_DEA": 24.2917967517061, "MA5": 442.934, "MA10": 444.89700000000005, "MA20": 429.063, "MomentumRate": -3.411791078233586, "VolumeRatio": 1.0715660445464252, "total_score": 32.71406815894629, "RSI_score": 55.629296185899385, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 32.94104460883207, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}];
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -512,8 +531,10 @@
             document.getElementById('update-time').textContent = 
                 '数据更新时间: ' + new Date().toLocaleString('zh-CN');
 
-            // Top recommendation
-            const top = data[0];
+            // Top recommendation (Prioritize first BUY candidate, otherwise top score)
+            const topBuy = data.find(d => d.signal === 'BUY');
+            const top = topBuy || data[0];
+            
             document.getElementById('top-symbol').textContent = top.name || top.symbol;
             document.getElementById('top-score').textContent = top.total_score.toFixed(1);
 
@@ -566,6 +587,9 @@
             // Render signals summary
             renderSignals(data);
 
+            // Render portfolio
+            renderPortfolio(data);
+
             // Render reasons
             renderReasons(top);
         }
@@ -577,15 +601,21 @@
             const buyCandidates = data.filter(d => d.signal === 'BUY');
             const sellCandidates = data.filter(d => d.signal === 'SELL');
             
-            // Render buy candidates
+            // 建议仓位比例 (按排名分配)
+            const positionPcts = [30, 25, 20, 15, 10];
+            
+            // Render buy candidates with position percentage
             if (buyCandidates.length > 0) {
-                buyContainer.innerHTML = buyCandidates.slice(0, 5).map(stock => `
+                buyContainer.innerHTML = buyCandidates.slice(0, 5).map((stock, i) => {
+                    const pct = positionPcts[i] || 10;
+                    return `
                     <div class="signal-item buy">
                         <span class="symbol">${stock.name || stock.symbol}</span>
                         <span class="reason">${stock.signal_reason || ''}</span>
+                        <span style="background: rgba(0,212,255,0.2); color: #00d4ff; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 8px;">建议${pct}%</span>
                         <span class="score">${stock.total_score.toFixed(1)}分</span>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             } else {
                 buyContainer.innerHTML = '<div class="no-signal">无明确买入信号</div>';
             }
@@ -609,7 +639,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: '综合得分',
                         data: data.map(d => d.total_score),
@@ -685,7 +715,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: 'RSI',
                         data: data.map(d => d.RSI),
@@ -744,7 +774,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: '10日动量 (%)',
                         data: data.map(d => d.MomentumRate),
@@ -896,6 +926,92 @@
                     <span class="text">${r.text}</span>
                 </div>
             `).join('');
+        }
+
+        function renderPortfolio(data) {
+            const container = document.getElementById('portfolio-card');
+            const listContainer = document.getElementById('portfolio-list');
+            
+            // 1. 筛选逻辑: BUY + 优质 HOLD (Score>=65 && Trend>=60)
+            let portfolio = data.filter(d => 
+                d.signal === 'BUY' || 
+                (d.signal === 'HOLD' && d.total_score >= 65 && d.Trend_score >= 60)
+            );
+            
+            if (portfolio.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            // 2. 权重计算
+            let totalWeightScore = 0;
+            portfolio = portfolio.map(d => {
+                let weightScore = d.total_score;
+                if (d.signal === 'BUY') weightScore *= 1.2; // 给予 BUY 信号 20% 的权重奖励
+                totalWeightScore += weightScore;
+                return { ...d, weightScore };
+            });
+            
+            // 归一化并排序
+            portfolio.forEach(d => {
+                d.weight = (d.weightScore / totalWeightScore) * 100;
+            });
+            portfolio.sort((a, b) => b.weight - a.weight);
+            
+            // 3. 渲染列表
+            const colors = ['#00d4ff', '#7b2cbf', '#00ff88', '#ffd93d', '#ff6b6b', '#ff9f43', '#54a0ff'];
+            listContainer.innerHTML = portfolio.map((stock, i) => {
+                const color = colors[i % colors.length];
+                const typeLabel = stock.signal === 'BUY' ? '🟢 信号买入' : '⚪️ 强势持有';
+                return `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 50px; font-weight: bold; color: ${color};">${(stock.weight).toFixed(1)}%</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-weight: 600;">${stock.name || stock.symbol}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${typeLabel}</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; width: ${stock.weight}%; background: ${color};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 4. 渲染图表
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            if (window.portfolioChartInstance) window.portfolioChartInstance.destroy();
+            
+            window.portfolioChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: portfolio.map(d => d.name || d.symbol),
+                    datasets: [{
+                        data: portfolio.map(d => d.weight),
+                        backgroundColor: portfolio.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>

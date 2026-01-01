@@ -369,6 +369,7 @@
 </head>
 <body>
     <div class="container">
+        <a href="../" style="display: inline-block; margin-bottom: 15px; color: #00d4ff; text-decoration: none;">← 返回首页</a>
         <header>
             <h1>📊 美股分析仪表盘</h1>
             <p id="update-time">数据更新时间: 加载中...</p>
@@ -387,11 +388,29 @@
             </div>
         </div>
 
+        <!-- Portfolio Recommendation -->
+        <div class="card" id="portfolio-card" style="display: none; margin-bottom: 30px; border-left: 4px solid var(--accent-primary);">
+            <div class="card-header">
+                <h3>💼 推荐持仓组合</h3>
+                <span class="icon">🥧</span>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div style="width: 100%; max-width: 300px; height: 300px; position: relative;">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+                <div id="portfolio-list" style="display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </div>
+
         <!-- Signals Summary -->
         <div class="grid" style="margin-bottom: 30px;">
             <div class="card" style="border-left: 4px solid var(--accent-success);">
                 <div class="card-header">
-                    <h3>🟢 买入候选</h3>
+                    <h3>⚡️ 今日买入信号</h3>
                     <span class="icon">📈</span>
                 </div>
                 <div id="buy-candidates" class="signal-list">
@@ -400,7 +419,7 @@
             </div>
             <div class="card" style="border-left: 4px solid var(--accent-danger);">
                 <div class="card-header">
-                    <h3>🔴 卖出候选</h3>
+                    <h3>⚠️ 今日卖出信号</h3>
                     <span class="icon">📉</span>
                 </div>
                 <div id="sell-candidates" class="signal-list">
@@ -498,7 +517,7 @@
 
     <script>
         // Stock analysis data (will be populated by Python)
-        const stockData = [{"symbol": "MU.US", "name": "MU", "close": 285.41, "daily_change": -2.467279499709518, "RSI": 59.01013120744065, "MACD": 6.732616815843116, "MACD_DIF": 15.729845466587278, "MACD_DEA": 12.36353705866572, "MA5": 288.776, "MA10": 273.673, "MA20": 258.371, "MomentumRate": 22.75170960388802, "VolumeRatio": 0.8216817987954638, "total_score": 75.19797375851186, "RSI_score": 50.98986879255935, "MACD_score": 100, "Trend_score": 75.0, "Momentum_score": 100, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "综合得分高+MACD金叉+RSI正常"}, {"symbol": "RKLB.US", "name": "RKLB", "close": 69.76, "daily_change": -0.9794180269694808, "RSI": 62.80870657178736, "MACD": 1.717165418859306, "MACD_DIF": 5.839664416279518, "MACD_DEA": 4.981081706849865, "MA5": 71.632, "MA10": 69.729, "MA20": 61.94325, "MomentumRate": 25.716345287439186, "VolumeRatio": 0.7094599591427148, "total_score": 74.61582976850485, "RSI_score": 47.19129342821264, "MACD_score": 92.17165418859307, "Trend_score": 75.0, "Momentum_score": 100, "Volume_score": 58.71620122571856, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "NVDA.US", "name": "NVDA", "close": 186.5, "daily_change": -0.5545483630158832, "RSI": 53.15838365071993, "MACD": 2.4658224679677505, "MACD_DIF": 0.9864778709728057, "MACD_DEA": -0.24643336301106952, "MA5": 188.28000000000003, "MA10": 184.03699999999998, "MA20": 182.50050000000002, "MomentumRate": 4.940355615575063, "VolumeRatio": 1.0044603967241275, "total_score": 71.24032382136659, "RSI_score": 56.84161634928007, "MACD_score": 99.6582246796775, "Trend_score": 75.0, "Momentum_score": 74.70177807787532, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "趋势向好+MACD金叉"}, {"symbol": "AMZN.US", "name": "AMZN", "close": 230.82, "daily_change": -0.7353889820668313, "RSI": 48.034398034398016, "MACD": 1.3932655062543773, "MACD_DIF": 0.41106375324352484, "MACD_DEA": -0.2855689998836638, "MA5": 232.064, "MA10": 229.627, "MA20": 228.77249999999998, "MomentumRate": 3.711358734723216, "VolumeRatio": 1.2395928338921183, "total_score": 62.69304597089179, "RSI_score": 61.965601965601984, "MACD_score": 88.93265506254377, "Trend_score": 75.0, "Momentum_score": 68.55679367361608, "Volume_score": 19.01017915269704, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "META.US", "name": "META", "close": 660.09, "daily_change": -0.8799459418875277, "RSI": 55.998554565165044, "MACD": 2.175043022118249, "MACD_DIF": 3.847232535249873, "MACD_DEA": 2.7597110241907483, "MA5": 663.114, "MA10": 661.473, "MA20": 658.2385, "MomentumRate": 0.4473864414517316, "VolumeRatio": 1.0195074835656146, "total_score": 60.59776157265522, "RSI_score": 54.001445434834956, "MACD_score": 96.75043022118248, "Trend_score": 50.0, "Momentum_score": 52.23693220725866, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "MSFT.US", "name": "MSFT", "close": 483.62, "daily_change": -0.7918273570197809, "RSI": 57.34184561810796, "MACD": 2.8148088204774506, "MACD_DIF": -1.8935038218359637, "MACD_DEA": -3.300908232074689, "MA5": 486.78600000000006, "MA10": 485.172, "MA20": 483.413, "MomentumRate": 1.5176640987426306, "VolumeRatio": 1.4387386086537004, "total_score": 54.85560193185254, "RSI_score": 52.65815438189204, "MACD_score": 100, "Trend_score": 50.0, "Momentum_score": 57.588320493713155, "Volume_score": 14.031534783657492, "signal": "HOLD", "signal_reason": "指标中性偏多，建议持有"}, {"symbol": "AVGO.US", "name": "AVGO", "close": 346.1, "daily_change": -1.0718879519794222, "RSI": 22.81486299699165, "MACD": -2.952758475172164, "MACD_DIF": -5.961204735580338, "MACD_DEA": -4.484825497994256, "MA5": 349.538, "MA10": 343.47200000000004, "MA20": 362.7185, "MomentumRate": 1.4063873425139206, "VolumeRatio": 0.8227071904858015, "total_score": 48.3644056095817, "RSI_score": 84.7900913353389, "MACD_score": 0, "Trend_score": 50.0, "Momentum_score": 57.0319367125696, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏空，建议观望"}, {"symbol": "GOOGL.US", "name": "GOOGL", "close": 313.0, "daily_change": -0.27083001433806375, "RSI": 41.645422943221355, "MACD": -1.907619342214229, "MACD_DIF": 4.095527470025729, "MACD_DEA": 5.049337141132844, "MA5": 313.602, "MA10": 309.848, "MA20": 312.226, "MomentumRate": 2.09740026747562, "VolumeRatio": 0.9809617688016921, "total_score": 46.95307699440289, "RSI_score": 68.35457705677865, "MACD_score": 5.923806577857711, "Trend_score": 50.0, "Momentum_score": 60.4870013373781, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏空，建议观望"}, {"symbol": "AAPL.US", "name": "AAPL", "close": 271.86, "daily_change": -0.4467555295151526, "RSI": 31.277056277056403, "MACD": -1.4212750143549178, "MACD_DIF": -0.11273680100799766, "MACD_DEA": 0.5979007061694612, "MA5": 273.18199999999996, "MA10": 272.694, "MA20": 275.4725, "MomentumRate": -1.0014201959142055, "VolumeRatio": 1.187410937019881, "total_score": 41.90061851996468, "RSI_score": 78.7229437229436, "MACD_score": 10.787249856450822, "Trend_score": 25.0, "Momentum_score": 44.99289902042897, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "指标中性偏空，建议观望"}, {"symbol": "QQQ.US", "name": "QQQ", "close": 614.31, "daily_change": -0.8265663593949313, "RSI": 39.404079031230054, "MACD": -0.28295021902356376, "MACD_DIF": 1.3657843523168367, "MACD_DEA": 1.5072594618286186, "MA5": 620.486, "MA10": 617.0319999999999, "MA20": 619.0345, "MomentumRate": 0.4184715978749399, "VolumeRatio": 1.3382860971024133, "total_score": 37.280324868069734, "RSI_score": 70.59592096876995, "MACD_score": 22.170497809764363, "Trend_score": 25.0, "Momentum_score": 52.0923579893747, "Volume_score": 16.54284757243967, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}, {"symbol": "COIN.US", "name": "COIN", "close": 226.14, "daily_change": -2.3575129533678796, "RSI": 15.396578538102688, "MACD": -1.932966623406493, "MACD_DIF": -13.588593395005773, "MACD_DEA": -12.622110083302527, "MA5": 233.62800000000001, "MA10": 238.68500000000003, "MA20": 253.6855, "MomentumRate": -10.478603380705446, "VolumeRatio": 1.1588540188957306, "total_score": 29.081189614773322, "RSI_score": 89.73561430793154, "MACD_score": 5.670333765935069, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}, {"symbol": "TSLA.US", "name": "TSLA", "close": 449.72, "daily_change": -1.0364632616684633, "RSI": 49.359211793466194, "MACD": -6.7943762467741, "MACD_DIF": 7.627203976066085, "MACD_DEA": 11.024392099453134, "MA5": 464.87600000000003, "MA10": 473.05, "MA20": 464.70050000000003, "MomentumRate": -8.197926022699429, "VolumeRatio": 0.8646842799765565, "total_score": 28.930231618607337, "RSI_score": 60.640788206533806, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 9.010369886502858, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "趋势走弱+MACD死叉+得分低"}];
+        const stockData = [{"symbol": "MU.US", "name": "MU", "close": 285.41, "daily_change": -2.467279499709518, "RSI": 59.01013120744065, "MACD": 6.732616815843116, "MACD_DIF": 15.729845466587278, "MACD_DEA": 12.36353705866572, "MA5": 288.776, "MA10": 273.673, "MA20": 258.371, "MomentumRate": 22.75170960388802, "VolumeRatio": 0.8216817987954638, "total_score": 75.19797375851186, "RSI_score": 50.98986879255935, "MACD_score": 100, "Trend_score": 75.0, "Momentum_score": 100, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "🇺🇸 美股买入: 趋势+MACD+RSI共振【均线多头+高分】"}, {"symbol": "RKLB.US", "name": "RKLB", "close": 69.76, "daily_change": -0.9794180269694808, "RSI": 62.80870657178736, "MACD": 1.717165418859306, "MACD_DIF": 5.839664416279518, "MACD_DEA": 4.981081706849865, "MA5": 71.632, "MA10": 69.729, "MA20": 61.94325, "MomentumRate": 25.716345287439186, "VolumeRatio": 0.7094599591427148, "total_score": 74.61582976850485, "RSI_score": 47.19129342821264, "MACD_score": 92.17165418859307, "Trend_score": 75.0, "Momentum_score": 100, "Volume_score": 58.71620122571856, "signal": "BUY", "signal_reason": "🇺🇸 美股买入: 趋势+MACD+RSI共振【均线多头+高分】"}, {"symbol": "NVDA.US", "name": "NVDA", "close": 186.5, "daily_change": -0.5545483630158832, "RSI": 53.15838365071993, "MACD": 2.4658224679677505, "MACD_DIF": 0.9864778709728057, "MACD_DEA": -0.24643336301106952, "MA5": 188.28000000000003, "MA10": 184.03699999999998, "MA20": 182.50050000000002, "MomentumRate": 4.940355615575063, "VolumeRatio": 1.0044603967241275, "total_score": 71.24032382136659, "RSI_score": 56.84161634928007, "MACD_score": 99.6582246796775, "Trend_score": 75.0, "Momentum_score": 74.70177807787532, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "🇺🇸 美股买入: 趋势+MACD+RSI共振【均线多头+高分】"}, {"symbol": "AMZN.US", "name": "AMZN", "close": 230.82, "daily_change": -0.7353889820668313, "RSI": 48.034398034398016, "MACD": 1.3932655062543773, "MACD_DIF": 0.41106375324352484, "MACD_DEA": -0.2855689998836638, "MA5": 232.064, "MA10": 229.627, "MA20": 228.77249999999998, "MomentumRate": 3.711358734723216, "VolumeRatio": 1.2395928338921183, "total_score": 62.69304597089179, "RSI_score": 61.965601965601984, "MACD_score": 88.93265506254377, "Trend_score": 75.0, "Momentum_score": 68.55679367361608, "Volume_score": 19.01017915269704, "signal": "BUY", "signal_reason": "🇺🇸 美股买入: 趋势+MACD+RSI共振【放量+均线多头+RSI低位】"}, {"symbol": "META.US", "name": "META", "close": 660.09, "daily_change": -0.8799459418875277, "RSI": 55.998554565165044, "MACD": 2.175043022118249, "MACD_DIF": 3.847232535249873, "MACD_DEA": 2.7597110241907483, "MA5": 663.114, "MA10": 661.473, "MA20": 658.2385, "MomentumRate": 0.4473864414517316, "VolumeRatio": 1.0195074835656146, "total_score": 60.59776157265522, "RSI_score": 54.001445434834956, "MACD_score": 96.75043022118248, "Trend_score": 50.0, "Momentum_score": 52.23693220725866, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "MSFT.US", "name": "MSFT", "close": 483.62, "daily_change": -0.7918273570197809, "RSI": 57.34184561810796, "MACD": 2.8148088204774506, "MACD_DIF": -1.8935038218359637, "MACD_DEA": -3.300908232074689, "MA5": 486.78600000000006, "MA10": 485.172, "MA20": 483.413, "MomentumRate": 1.5176640987426306, "VolumeRatio": 1.4387386086537004, "total_score": 54.85560193185254, "RSI_score": 52.65815438189204, "MACD_score": 100, "Trend_score": 50.0, "Momentum_score": 57.588320493713155, "Volume_score": 14.031534783657492, "signal": "HOLD", "signal_reason": "得分偏低，观望"}, {"symbol": "AVGO.US", "name": "AVGO", "close": 346.1, "daily_change": -1.0718879519794222, "RSI": 22.81486299699165, "MACD": -2.952758475172164, "MACD_DIF": -5.961204735580338, "MACD_DEA": -4.484825497994256, "MA5": 349.538, "MA10": 343.47200000000004, "MA20": 362.7185, "MomentumRate": 1.4063873425139206, "VolumeRatio": 0.8227071904858015, "total_score": 48.3644056095817, "RSI_score": 84.7900913353389, "MACD_score": 0, "Trend_score": 50.0, "Momentum_score": 57.0319367125696, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "MACD未金叉，等待动能确认"}, {"symbol": "GOOGL.US", "name": "GOOGL", "close": 313.0, "daily_change": -0.27083001433806375, "RSI": 41.645422943221355, "MACD": -1.907619342214229, "MACD_DIF": 4.095527470025729, "MACD_DEA": 5.049337141132844, "MA5": 313.602, "MA10": 309.848, "MA20": 312.226, "MomentumRate": 2.09740026747562, "VolumeRatio": 0.9809617688016921, "total_score": 46.95307699440289, "RSI_score": 68.35457705677865, "MACD_score": 5.923806577857711, "Trend_score": 50.0, "Momentum_score": 60.4870013373781, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "MACD未金叉，等待动能确认"}, {"symbol": "AAPL.US", "name": "AAPL", "close": 271.86, "daily_change": -0.4467555295151526, "RSI": 31.277056277056403, "MACD": -1.4212750143549178, "MACD_DIF": -0.11273680100799766, "MACD_DEA": 0.5979007061694612, "MA5": 273.18199999999996, "MA10": 272.694, "MA20": 275.4725, "MomentumRate": -1.0014201959142055, "VolumeRatio": 1.187410937019881, "total_score": 41.90061851996468, "RSI_score": 78.7229437229436, "MACD_score": 10.787249856450822, "Trend_score": 25.0, "Momentum_score": 44.99289902042897, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势走弱，建议减仓"}, {"symbol": "QQQ.US", "name": "QQQ", "close": 614.31, "daily_change": -0.8265663593949313, "RSI": 39.404079031230054, "MACD": -0.28295021902356376, "MACD_DIF": 1.3657843523168367, "MACD_DEA": 1.5072594618286186, "MA5": 620.486, "MA10": 617.0319999999999, "MA20": 619.0345, "MomentumRate": 0.4184715978749399, "VolumeRatio": 1.3382860971024133, "total_score": 37.280324868069734, "RSI_score": 70.59592096876995, "MACD_score": 22.170497809764363, "Trend_score": 25.0, "Momentum_score": 52.0923579893747, "Volume_score": 16.54284757243967, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势走弱，建议减仓"}, {"symbol": "COIN.US", "name": "COIN", "close": 226.14, "daily_change": -2.3575129533678796, "RSI": 15.396578538102688, "MACD": -1.932966623406493, "MACD_DIF": -13.588593395005773, "MACD_DEA": -12.622110083302527, "MA5": 233.62800000000001, "MA10": 238.68500000000003, "MA20": 253.6855, "MomentumRate": -10.478603380705446, "VolumeRatio": 1.1588540188957306, "total_score": 29.081189614773322, "RSI_score": 89.73561430793154, "MACD_score": 5.670333765935069, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势走弱，建议减仓"}, {"symbol": "TSLA.US", "name": "TSLA", "close": 449.72, "daily_change": -1.0364632616684633, "RSI": 49.359211793466194, "MACD": -6.7943762467741, "MACD_DIF": 7.627203976066085, "MACD_DEA": 11.024392099453134, "MA5": 464.87600000000003, "MA10": 473.05, "MA20": 464.70050000000003, "MomentumRate": -8.197926022699429, "VolumeRatio": 0.8646842799765565, "total_score": 28.930231618607337, "RSI_score": 60.640788206533806, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 9.010369886502858, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势走弱，建议减仓"}];
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -512,8 +531,10 @@
             document.getElementById('update-time').textContent = 
                 '数据更新时间: ' + new Date().toLocaleString('zh-CN');
 
-            // Top recommendation
-            const top = data[0];
+            // Top recommendation (Prioritize first BUY candidate, otherwise top score)
+            const topBuy = data.find(d => d.signal === 'BUY');
+            const top = topBuy || data[0];
+            
             document.getElementById('top-symbol').textContent = top.name || top.symbol;
             document.getElementById('top-score').textContent = top.total_score.toFixed(1);
 
@@ -566,6 +587,9 @@
             // Render signals summary
             renderSignals(data);
 
+            // Render portfolio
+            renderPortfolio(data);
+
             // Render reasons
             renderReasons(top);
         }
@@ -577,15 +601,21 @@
             const buyCandidates = data.filter(d => d.signal === 'BUY');
             const sellCandidates = data.filter(d => d.signal === 'SELL');
             
-            // Render buy candidates
+            // 建议仓位比例 (按排名分配)
+            const positionPcts = [30, 25, 20, 15, 10];
+            
+            // Render buy candidates with position percentage
             if (buyCandidates.length > 0) {
-                buyContainer.innerHTML = buyCandidates.slice(0, 5).map(stock => `
+                buyContainer.innerHTML = buyCandidates.slice(0, 5).map((stock, i) => {
+                    const pct = positionPcts[i] || 10;
+                    return `
                     <div class="signal-item buy">
                         <span class="symbol">${stock.name || stock.symbol}</span>
                         <span class="reason">${stock.signal_reason || ''}</span>
+                        <span style="background: rgba(0,212,255,0.2); color: #00d4ff; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 8px;">建议${pct}%</span>
                         <span class="score">${stock.total_score.toFixed(1)}分</span>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
             } else {
                 buyContainer.innerHTML = '<div class="no-signal">无明确买入信号</div>';
             }
@@ -609,7 +639,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: '综合得分',
                         data: data.map(d => d.total_score),
@@ -685,7 +715,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: 'RSI',
                         data: data.map(d => d.RSI),
@@ -744,7 +774,7 @@
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: data.map(d => d.symbol.replace('.US', '')),
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
                     datasets: [{
                         label: '10日动量 (%)',
                         data: data.map(d => d.MomentumRate),
@@ -896,6 +926,92 @@
                     <span class="text">${r.text}</span>
                 </div>
             `).join('');
+        }
+
+        function renderPortfolio(data) {
+            const container = document.getElementById('portfolio-card');
+            const listContainer = document.getElementById('portfolio-list');
+            
+            // 1. 筛选逻辑: BUY + 优质 HOLD (Score>=65 && Trend>=60)
+            let portfolio = data.filter(d => 
+                d.signal === 'BUY' || 
+                (d.signal === 'HOLD' && d.total_score >= 65 && d.Trend_score >= 60)
+            );
+            
+            if (portfolio.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            // 2. 权重计算
+            let totalWeightScore = 0;
+            portfolio = portfolio.map(d => {
+                let weightScore = d.total_score;
+                if (d.signal === 'BUY') weightScore *= 1.2; // 给予 BUY 信号 20% 的权重奖励
+                totalWeightScore += weightScore;
+                return { ...d, weightScore };
+            });
+            
+            // 归一化并排序
+            portfolio.forEach(d => {
+                d.weight = (d.weightScore / totalWeightScore) * 100;
+            });
+            portfolio.sort((a, b) => b.weight - a.weight);
+            
+            // 3. 渲染列表
+            const colors = ['#00d4ff', '#7b2cbf', '#00ff88', '#ffd93d', '#ff6b6b', '#ff9f43', '#54a0ff'];
+            listContainer.innerHTML = portfolio.map((stock, i) => {
+                const color = colors[i % colors.length];
+                const typeLabel = stock.signal === 'BUY' ? '🟢 信号买入' : '⚪️ 强势持有';
+                return `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 50px; font-weight: bold; color: ${color};">${(stock.weight).toFixed(1)}%</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-weight: 600;">${stock.name || stock.symbol}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${typeLabel}</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; width: ${stock.weight}%; background: ${color};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 4. 渲染图表
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            if (window.portfolioChartInstance) window.portfolioChartInstance.destroy();
+            
+            window.portfolioChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: portfolio.map(d => d.name || d.symbol),
+                    datasets: [{
+                        data: portfolio.map(d => d.weight),
+                        backgroundColor: portfolio.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>
