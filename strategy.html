@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量化策略详情 - Pro Quant Rules</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .back-link {
+            display: inline-block; 
+            margin-bottom: 15px; 
+            color: var(--accent-primary); 
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Markdown Content */
+        .markdown-body {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            line-height: 1.3;
+        }
+
+        .markdown-body h1 {
+            font-size: 2.2rem;
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5em;
+            margin-top: 0;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.6rem;
+            color: var(--accent-success);
+            margin-top: 2em;
+        }
+
+        .markdown-body h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-top: 1.5em;
+        }
+
+        .markdown-body p {
+            margin-bottom: 1.2em;
+            color: #d0d0e0;
+        }
+
+        .markdown-body ul, .markdown-body ol {
+            margin-bottom: 1.2em;
+            padding-left: 1.5em;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.5em;
+            color: #d0d0e0;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid var(--accent-warning);
+            background: rgba(255, 217, 61, 0.05);
+            padding: 15px 20px;
+            margin: 1.5em 0;
+            border-radius: 0 8px 8px 0;
+            color: #e0e0e0;
+        }
+
+        .markdown-body code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: var(--accent-warning);
+            font-size: 0.9em;
+        }
+
+        .markdown-body pre {
+            background: #0a0a16;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .markdown-body pre code {
+            background: transparent;
+            padding: 0;
+            color: #f0f0f0;
+            font-size: 0.9em;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .markdown-body table th {
+            background: rgba(255,255,255,0.05);
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .markdown-body table th, .markdown-body table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .markdown-body table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .markdown-body hr {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 3em 0;
+        }
+        
+        /* Specific highlights based on content */
+        .markdown-body strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">← 返回首页</a>
+        </header>
+        
+        <div class="markdown-body">
+            <h1>量化交易策略规则 (Quantitative Trading Rules)</h1>
+<p>基于私募基金、对冲基金内部策略研究，结合回测数据优化</p>
+<hr />
+<h2>一、核心策略理念</h2>
+<h3>1. 多指标共振原则</h3>
+<blockquote>
+<p>单一指标胜率约 50%，<strong>多指标共振可提升至 65-73%</strong></p>
+</blockquote>
+<ul>
+<li>不依赖单一指标，而是等待多个指标同时确认</li>
+<li>任何一个必要条件不满足，则不发出信号</li>
+</ul>
+<h3>2. 趋势跟随 + 动量确认</h3>
+<blockquote>
+<p>私募基金核心理念：<strong>顺势而为，不抄底</strong></p>
+</blockquote>
+<ul>
+<li>只在趋势确立后入场，不猜底</li>
+<li>用动量指标确认趋势强度</li>
+</ul>
+<h3>3. 量价配合验证</h3>
+<blockquote>
+<p>A股铁律：<strong>无量不涨，量在价先</strong></p>
+</blockquote>
+<ul>
+<li>放量突破才是真突破</li>
+<li>缩量上涨警惕假突破</li>
+</ul>
+<hr />
+<h2>二、买入信号条件（全部满足）</h2>
+<h3>必要条件（缺一不可）</h3>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>参数要求</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>趋势确认</strong></td>
+<td>价格 &gt; MA10</td>
+<td>价格站上中期均线</td>
+</tr>
+<tr>
+<td><strong>MACD金叉</strong></td>
+<td>DIF &gt; DEA 且 MACD &gt; 0</td>
+<td>多头动能确认</td>
+</tr>
+<tr>
+<td><strong>RSI健康区</strong></td>
+<td>40 ≤ RSI ≤ 65</td>
+<td>避免超买追高，避免超卖抄底</td>
+</tr>
+<tr>
+<td><strong>综合得分</strong></td>
+<td>Score ≥ 60</td>
+<td>系统综合评估通过</td>
+</tr>
+</tbody>
+</table>
+<h3>加分条件（满足越多越好）</h3>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>权重</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>放量</strong></td>
+<td>+15%</td>
+<td>量比 ≥ 1.2</td>
+</tr>
+<tr>
+<td><strong>均线多头排列</strong></td>
+<td>+10%</td>
+<td>MA5 &gt; MA10 &gt; MA20</td>
+</tr>
+<tr>
+<td><strong>MACD柱放大</strong></td>
+<td>+10%</td>
+<td>连续2日 MACD 柱增长</td>
+</tr>
+<tr>
+<td><strong>突破前高</strong></td>
+<td>+15%</td>
+<td>价格突破近20日高点</td>
+</tr>
+</tbody>
+</table>
+<h3>买入信号生成规则</h3>
+<pre><code>BUY 条件:
+  必要条件全部满足
+  且 (加分条件满足 ≥ 2项 或 综合得分 ≥ 70)
+</code></pre>
+<hr />
+<h2>三、卖出/止盈信号</h2>
+<h3>立即卖出（任一满足）</h3>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RSI超买</strong></td>
+<td>RSI &gt; 82 或 RSI&gt;75且趋势转弱</td>
+<td>严重超买或高位转弱</td>
+</tr>
+<tr>
+<td><strong>MACD死叉</strong></td>
+<td>DIF &lt; DEA 且 MACD &lt; 0</td>
+<td>多头动能衰竭</td>
+</tr>
+<tr>
+<td><strong>跌破MA10</strong></td>
+<td>价格 &lt; MA10 且 连续2日</td>
+<td>中期趋势转弱</td>
+</tr>
+<tr>
+<td><strong>放量下跌</strong></td>
+<td>量比 &gt; 2 且 日跌幅 &gt; 3%</td>
+<td>恐慌性抛售</td>
+</tr>
+</tbody>
+</table>
+<h3>动态止损</h3>
+<pre><code>止损位 = 买入价 × (1 - ATR系数 × ATR)
+    - 美股: ATR系数 = 2.0
+    - A股: ATR系数 = 1.5
+</code></pre>
+<h3>移动止盈</h3>
+<pre><code>当浮盈 &gt; 10% 时:
+    止盈位上移至 买入价 × 1.05 (锁定5%利润)
+当浮盈 &gt; 20% 时:
+    止盈位上移至 买入价 × 1.15 (锁定15%利润)
+</code></pre>
+<hr />
+<h2>四、分市场策略差异</h2>
+<h3>🇺🇸 美股策略（趋势跟随）</h3>
+<ul>
+<li><strong>持仓周期</strong>: 10-20 天</li>
+<li><strong>核心指标</strong>: 趋势 + MACD &gt; 量能</li>
+<li><strong>仓位管理</strong>: 单只股票不超过 20%</li>
+<li><strong>特点</strong>: 趋势明确才入场，允许较宽止损</li>
+</ul>
+<h3>🇨🇳 A股策略（量价共振）</h3>
+<ul>
+<li><strong>持仓周期</strong>: 5-10 天</li>
+<li><strong>核心指标</strong>: 量能 &gt; 趋势 &gt; MACD</li>
+<li><strong>仓位管理</strong>: 单只股票不超过 15%</li>
+<li><strong>特点</strong>: 必须放量确认，快进快出</li>
+</ul>
+<hr />
+<h2>五、仓位管理（小资金版）</h2>
+<h3>持股个数建议</h3>
+<table>
+<thead>
+<tr>
+<th>资金规模</th>
+<th>建议持股数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5万以下</td>
+<td><strong>3-4只</strong></td>
+<td>集中持仓，精选个股</td>
+</tr>
+<tr>
+<td>5-20万</td>
+<td><strong>4-6只</strong></td>
+<td>适度分散</td>
+</tr>
+<tr>
+<td>20-50万</td>
+<td><strong>6-8只</strong></td>
+<td>充分分散但不过度</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>核心原则</strong>：资金越少，越要集中！</p>
+</blockquote>
+<h3>单只持仓上限</h3>
+<pre><code>小资金（&lt;20万）:
+    - 单只最高: 30-35%
+    - 前3大持仓: 70-80%
+    - 最小持仓: 不低于 10%（太小没意义）
+
+中等资金（20-50万）:
+    - 单只最高: 20-25%
+    - 前3大持仓: 50-60%
+</code></pre>
+<h3>推荐持仓分布（5只股票示例）</h3>
+<table>
+<thead>
+<tr>
+<th>仓位</th>
+<th>比例</th>
+<th>选股标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第1重仓</td>
+<td><strong>30%</strong></td>
+<td>最高分+BUY信号+强势</td>
+</tr>
+<tr>
+<td>第2重仓</td>
+<td><strong>25%</strong></td>
+<td>高分+BUY信号</td>
+</tr>
+<tr>
+<td>第3重仓</td>
+<td><strong>20%</strong></td>
+<td>BUY信号+趋势向好</td>
+</tr>
+<tr>
+<td>第4仓位</td>
+<td><strong>15%</strong></td>
+<td>观望转强信号</td>
+</tr>
+<tr>
+<td>第5仓位</td>
+<td><strong>10%</strong></td>
+<td>备选/ETF</td>
+</tr>
+</tbody>
+</table>
+<h3>资产配置建议</h3>
+<pre><code>小资金推荐配置:
+├── A股 (60-70%)
+│   ├── 个股 40-50% (2-3只)
+│   └── ETF 15-20% (1只宽基/行业)
+├── 美股 (20-30%)
+│   └── 科技股/QQQ (1-2只)
+└── 现金 (10-20%)
+    └── 应对回调加仓
+</code></pre>
+<h3>加仓/减仓规则</h3>
+<pre><code>加仓条件（每次加仓 10-15%）:
+    - 确认 BUY 信号 + 放量突破
+    - 持仓盈利 &gt; 5% 且趋势未破
+
+减仓条件（每次减仓 30-50%）:
+    - RSI &gt; 82 超买
+    - RSI &gt; 75 且趋势转弱
+    - 跌破 MA10 止损
+    - MACD 死叉
+</code></pre>
+<hr />
+<h2>六、信号优先级</h2>
+<pre><code>1. 卖出信号 &gt; 买入信号（先止损/止盈）
+2. 趋势确认 &gt; 动量指标 &gt; 振荡指标
+3. 风控规则 &gt; 收益预期
+</code></pre>
+<hr />
+<h2>七、回测验证标准</h2>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>合格线</th>
+<th>优秀线</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5日胜率</td>
+<td>≥ 52%</td>
+<td>≥ 58%</td>
+</tr>
+<tr>
+<td>20日胜率</td>
+<td>≥ 55%</td>
+<td>≥ 62%</td>
+</tr>
+<tr>
+<td>平均收益/风险比</td>
+<td>≥ 1.5</td>
+<td>≥ 2.0</td>
+</tr>
+<tr>
+<td>最大回撤</td>
+<td>≤ 15%</td>
+<td>≤ 10%</td>
+</tr>
+<tr>
+<td>夏普比率</td>
+<td>≥ 1.0</td>
+<td>≥ 1.5</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>八、策略迭代原则</h2>
+<ol>
+<li><strong>月度回测</strong>: 每月末重新回测策略有效性</li>
+<li><strong>参数微调</strong>: 根据市场环境调整 RSI 区间</li>
+<li><strong>因子检验</strong>: 持续监控各因子的有效性衰减</li>
+<li><strong>情绪指标</strong>: 考虑加入市场情绪因子（VIX/资金流向）</li>
+</ol>
+<hr />
+<h2>九、信号解读 (Signal Interpretation)</h2>
+<h3>🟢 信号买入 (BUY) —— &quot;现在上车&quot;</h3>
+<p>这是系统发出的<strong>进攻信号</strong>，意味着<strong>今天</strong>是最佳的开仓或加仓时机。</p>
+<ul>
+<li><strong>核心逻辑</strong>:
+<ol>
+<li><strong>位置好</strong>: RSI 处于健康区 (40-65)，<strong>没有超买</strong>，意味着价格还没涨飞。</li>
+<li><strong>启动点</strong>: 刚刚发生 <strong>MACD金叉</strong> 或 <strong>放量突破</strong>，是行情的起跑线。</li>
+<li><strong>胜率高</strong>: 满足了所有核心指标共振。</li>
+</ol>
+</li>
+<li><strong>操作建议</strong>: <strong>重点建仓</strong>。这是回测中胜率最高的一类信号。</li>
+</ul>
+<h3>⚪️ 强势持有 (Strong HOLD) —— &quot;坐稳扶好&quot;</h3>
+<p>这是系统识别出的<strong>主升浪</strong>阶段，意味着虽然错过了最佳买点，但趋势非常强，应该继续持有。</p>
+<ul>
+<li><strong>核心逻辑</strong>:
+<ol>
+<li><strong>趋势强</strong>: 综合得分 ≥ 65，且趋势分 ≥ 60（均线多头排列）。</li>
+<li><strong>位置偏高</strong>: RSI 可能已经超过 65 或 70，不再适合新资金追高进入（成本优势小）。</li>
+<li><strong>没坏点</strong>: 虽然涨高了，但<strong>还没出现卖点</strong>（MACD没死叉、没放量下跌）。</li>
+</ol>
+</li>
+<li><strong>操作建议</strong>: <strong>持股待涨，不轻易下车</strong>。之前我们优化的 &quot;RSI&gt;75 不卖&quot; 策略，就是为了让这类股票能停留在&quot;强势持有&quot;列表里，让你吃到最肥的主升浪。</li>
+</ul>
+<hr />
+<p><em>策略版本: v2.1</em>
+<em>更新日期: 2026-01-02</em>
+<em>参考来源: 量化私募策略研究、对冲基金最佳实践</em></p>
+
+        </div>
+
+        <footer>
+            <p>Generated by Pro Quant System</p>
+        </footer>
+    </div>
+</body>
+</html>
