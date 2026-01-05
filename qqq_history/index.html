@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QQQ 历史回测 - 2025年</title>
+    <title>QQQ 历史回测</title>
     <style>
         :root {
             --bg-primary: #0f0f23;
@@ -38,29 +38,30 @@
             margin: 20px 0;
             font-size: 0.9rem;
         }
-        .month-grid {
+        .year-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
         }
-        .month-card {
+        .year-card {
             background: var(--bg-card);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 25px;
             text-decoration: none;
             color: inherit;
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
             text-align: center;
         }
-        .month-card:hover {
-            transform: translateY(-3px);
+        .year-card:hover {
+            transform: translateY(-5px);
             border-color: var(--accent-primary);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
         }
-        .month-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
-        .month-return { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
-        .month-stats { font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 10px; }
-        .month-days { font-size: 0.8rem; color: var(--text-secondary); }
+        .year-title { font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent-primary); }
+        .year-return { font-size: 2rem; font-weight: bold; margin-bottom: 15px; }
+        .year-stats { font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: center; gap: 12px; }
+        .year-days { font-size: 0.85rem; color: var(--text-secondary); }
         footer { text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
     </style>
 </head>
@@ -68,152 +69,42 @@
     <div class="container">
         <header>
             <h1>📊 QQQ 历史回测分析</h1>
-            <p>2025年1月 - 12月</p>
+            <p>选择年份查看详细分析</p>
         </header>
         
         <div class="backtest-notice">
             ⚠️ <strong>历史回测说明:</strong> 模拟"如果当时运行分析系统"的结果，用于验证系统表现。
         </div>
         
-        <div class="month-grid">
+        <div class="year-grid">
             
-        <a href="index_01.html" class="month-card">
-            <div class="month-title">1月</div>
-            <div class="month-return" style="color: #00ff88">+2.2%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
-                <span style="color: #ff6b6b">📉 14</span>
-                <span style="color: #ffd93d">⏸️ 10</span>
-            </div>
-            <div class="month-days">31 交易日</div>
-        </a>
-
-        <a href="index_02.html" class="month-card">
-            <div class="month-title">2月</div>
-            <div class="month-return" style="color: #ff6b6b">-2.7%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 8</span>
-                <span style="color: #ff6b6b">📉 6</span>
-                <span style="color: #ffd93d">⏸️ 14</span>
-            </div>
-            <div class="month-days">28 交易日</div>
-        </a>
-
-        <a href="index_03.html" class="month-card">
-            <div class="month-title">3月</div>
-            <div class="month-return" style="color: #ff6b6b">-7.6%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
-                <span style="color: #ff6b6b">📉 18</span>
-                <span style="color: #ffd93d">⏸️ 6</span>
-            </div>
-            <div class="month-days">31 交易日</div>
-        </a>
-
-        <a href="index_04.html" class="month-card">
-            <div class="month-title">4月</div>
-            <div class="month-return" style="color: #00ff88">+0.6%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 8</span>
-                <span style="color: #ff6b6b">📉 10</span>
-                <span style="color: #ffd93d">⏸️ 12</span>
-            </div>
-            <div class="month-days">30 交易日</div>
-        </a>
-
-        <a href="index_05.html" class="month-card">
-            <div class="month-title">5月</div>
-            <div class="month-return" style="color: #00ff88">+7.8%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
-                <span style="color: #ff6b6b">📉 18</span>
-                <span style="color: #ffd93d">⏸️ 12</span>
-            </div>
-            <div class="month-days">31 交易日</div>
-        </a>
-
-        <a href="index_06.html" class="month-card">
-            <div class="month-title">6月</div>
-            <div class="month-return" style="color: #00ff88">+6.4%</div>
-            <div class="month-stats">
+        <a href="2026/index.html" class="year-card">
+            <div class="year-title">2026年</div>
+            <div class="year-return" style="color: #ff6b6b">-0.2%</div>
+            <div class="year-stats">
                 <span style="color: #00ff88">📈 0</span>
-                <span style="color: #ff6b6b">📉 7</span>
-                <span style="color: #ffd93d">⏸️ 23</span>
-            </div>
-            <div class="month-days">30 交易日</div>
-        </a>
-
-        <a href="index_07.html" class="month-card">
-            <div class="month-title">7月</div>
-            <div class="month-return" style="color: #00ff88">+3.3%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
-                <span style="color: #ff6b6b">📉 12</span>
-                <span style="color: #ffd93d">⏸️ 18</span>
-            </div>
-            <div class="month-days">31 交易日</div>
-        </a>
-
-        <a href="index_08.html" class="month-card">
-            <div class="month-title">8月</div>
-            <div class="month-return" style="color: #00ff88">+3.0%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 4</span>
-                <span style="color: #ff6b6b">📉 11</span>
-                <span style="color: #ffd93d">⏸️ 16</span>
-            </div>
-            <div class="month-days">31 交易日</div>
-        </a>
-
-        <a href="index_09.html" class="month-card">
-            <div class="month-title">9月</div>
-            <div class="month-return" style="color: #00ff88">+5.4%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
-                <span style="color: #ff6b6b">📉 9</span>
-                <span style="color: #ffd93d">⏸️ 20</span>
-            </div>
-            <div class="month-days">30 交易日</div>
-        </a>
-
-        <a href="index_10.html" class="month-card">
-            <div class="month-title">10月</div>
-            <div class="month-return" style="color: #00ff88">+4.3%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
                 <span style="color: #ff6b6b">📉 5</span>
-                <span style="color: #ffd93d">⏸️ 19</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
             </div>
-            <div class="month-days">31 交易日</div>
+            <div class="year-days">5 交易日</div>
         </a>
 
-        <a href="index_11.html" class="month-card">
-            <div class="month-title">11月</div>
-            <div class="month-return" style="color: #ff6b6b">-1.6%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 0</span>
-                <span style="color: #ff6b6b">📉 21</span>
-                <span style="color: #ffd93d">⏸️ 9</span>
+        <a href="2025/index.html" class="year-card">
+            <div class="year-title">2025年</div>
+            <div class="year-return" style="color: #00ff88">+20.8%</div>
+            <div class="year-stats">
+                <span style="color: #00ff88">📈 57</span>
+                <span style="color: #ff6b6b">📉 136</span>
+                <span style="color: #ffd93d">⏸️ 172</span>
             </div>
-            <div class="month-days">30 交易日</div>
-        </a>
-
-        <a href="index_12.html" class="month-card">
-            <div class="month-title">12月</div>
-            <div class="month-return" style="color: #00ff88">+1.2%</div>
-            <div class="month-stats">
-                <span style="color: #00ff88">📈 8</span>
-                <span style="color: #ff6b6b">📉 4</span>
-                <span style="color: #ffd93d">⏸️ 19</span>
-            </div>
-            <div class="month-days">31 交易日</div>
+            <div class="year-days">365 交易日</div>
         </a>
 
         </div>
         
         <footer>
             <p>⚠️ 本分析仅供参考，不构成投资建议</p>
-            <p>生成时间: 2026-01-05 10:42:38</p>
+            <p>生成时间: 2026-01-05 14:00:49</p>
         </footer>
     </div>
 </body>

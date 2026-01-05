@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQQ 历史回测 - 2026年</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-card: #1a1a2e;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent-primary: #00d4ff;
+            --border-color: rgba(255,255,255,0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border-radius: 16px;
+        }
+        header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .backtest-notice {
+            background: rgba(255, 217, 61, 0.15);
+            border: 1px solid #ffd93d;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        .month-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .month-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-primary);
+        }
+        .month-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
+        .month-return { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+        .month-stats { font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 10px; }
+        .month-days { font-size: 0.8rem; color: var(--text-secondary); }
+        footer { text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 QQQ 历史回测分析</h1>
+            <p>2026年1月 - 12月</p>
+        </header>
+        
+        <div class="backtest-notice">
+            ⚠️ <strong>历史回测说明:</strong> 模拟"如果当时运行分析系统"的结果，用于验证系统表现。
+        </div>
+        
+        <div class="month-grid">
+            
+        <a href="index_01.html" class="month-card">
+            <div class="month-title">1月</div>
+            <div class="month-return" style="color: #ff6b6b">-0.2%</div>
+            <div class="month-stats">
+                <span style="color: #00ff88">📈 0</span>
+                <span style="color: #ff6b6b">📉 5</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-days">5 交易日</div>
+        </a>
+
+        </div>
+        
+        <footer>
+            <p>⚠️ 本分析仅供参考，不构成投资建议</p>
+            <p>生成时间: 2026-01-05 14:00:49</p>
+        </footer>
+    </div>
+</body>
+</html>
