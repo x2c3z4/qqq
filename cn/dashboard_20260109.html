@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A股分析仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7b2cbf;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 16px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Recommendation Banner */
+        .recommendation-banner {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .recommendation-info h2 {
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .recommendation-info .stock-symbol {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .recommendation-score {
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .grid-full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .card-header .icon {
+            font-size: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Ranking Table */
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ranking-table th,
+        .ranking-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ranking-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ranking-table tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .ranking-table .rank {
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+
+        .ranking-table .rank-1 { color: #ffd700; }
+        .ranking-table .rank-2 { color: #c0c0c0; }
+        .ranking-table .rank-3 { color: #cd7f32; }
+
+        .ranking-table .symbol {
+            font-weight: 600;
+        }
+
+        .ranking-table .score {
+            font-weight: bold;
+        }
+
+        .ranking-table .positive { color: var(--accent-success); }
+        .ranking-table .negative { color: var(--accent-danger); }
+
+        /* Indicator Pills */
+        .indicator-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pill {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .pill.success {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: var(--accent-success);
+        }
+
+        .pill.warning {
+            background: rgba(255, 217, 61, 0.1);
+            border-color: rgba(255, 217, 61, 0.3);
+            color: var(--accent-warning);
+        }
+
+        .pill.danger {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.3);
+            color: var(--accent-danger);
+        }
+
+        /* Reason Box */
+        .reason-box {
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .reason-box h4 {
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+        }
+
+        .reason-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        .reason-item .emoji {
+            font-size: 1.3rem;
+            margin-right: 12px;
+        }
+
+        .reason-item .text {
+            color: var(--text-secondary);
+        }
+
+        .reason-item .text strong {
+            color: var(--text-primary);
+        }
+
+        /* Signal List */
+        .signal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .signal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .signal-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(5px);
+        }
+
+        .signal-item.buy {
+            border-left: 3px solid var(--accent-success);
+        }
+
+        .signal-item.sell {
+            border-left: 3px solid var(--accent-danger);
+        }
+
+        .signal-item .symbol {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .signal-item .score {
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .signal-item.buy .score {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-success);
+        }
+
+        .signal-item.sell .score {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--accent-danger);
+        }
+
+        .signal-item .reason {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .no-signal {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .recommendation-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" style="display: inline-block; margin-bottom: 15px; color: #00d4ff; text-decoration: none;">← 返回首页</a>
+        <header>
+            <h1>📊 A股分析仪表盘</h1>
+            <p id="update-time">数据更新时间: 加载中...</p>
+        </header>
+
+        <!-- Recommendation Banner -->
+        <div class="recommendation-banner" id="recommendation-banner">
+            <div class="recommendation-info">
+                <h2>🎯 今日推荐</h2>
+                <div class="stock-symbol" id="top-symbol">--</div>
+                <div class="indicator-pills" id="top-indicators"></div>
+            </div>
+            <div class="recommendation-score">
+                <div class="score-value" id="top-score">--</div>
+                <div class="score-label">综合得分</div>
+            </div>
+        </div>
+
+        <!-- Portfolio Recommendation -->
+        <div class="card" id="portfolio-card" style="display: none; margin-bottom: 30px; border-left: 4px solid var(--accent-primary);">
+            <div class="card-header">
+                <h3>💼 推荐持仓组合</h3>
+                <span class="icon">🥧</span>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div style="width: 100%; max-width: 300px; height: 300px; position: relative;">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+                <div id="portfolio-list" style="display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Signals Summary -->
+        <div class="grid" style="margin-bottom: 30px;">
+            <div class="card" style="border-left: 4px solid var(--accent-success);">
+                <div class="card-header">
+                    <h3>⚡️ 今日买入信号</h3>
+                    <span class="icon">📈</span>
+                </div>
+                <div id="buy-candidates" class="signal-list">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+            <div class="card" style="border-left: 4px solid var(--accent-danger);">
+                <div class="card-header">
+                    <h3>⚠️ 今日卖出信号</h3>
+                    <span class="icon">📉</span>
+                </div>
+                <div id="sell-candidates" class="signal-list">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid">
+            <!-- Score Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>综合得分对比</h3>
+                    <span class="icon">📊</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Score Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>推荐股票得分构成</h3>
+                    <span class="icon">🎯</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="breakdownChart"></canvas>
+                </div>
+            </div>
+
+            <!-- RSI Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>RSI 指标对比</h3>
+                    <span class="icon">📈</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Momentum Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>10日动量对比</h3>
+                    <span class="icon">🚀</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="momentumChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>股票排名详情</h3>
+                <span class="icon">🏆</span>
+            </div>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>股票</th>
+                        <th>价格</th>
+                        <th>涨跌幅</th>
+                        <th>RSI</th>
+                        <th>MACD</th>
+                        <th>趋势</th>
+                        <th>动量</th>
+                        <th>量比</th>
+                        <th>得分</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-tbody">
+                    <tr><td colspan="10" class="loading">加载中</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recommendation Reason -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <h3>推荐理由详解</h3>
+                <span class="icon">💡</span>
+            </div>
+            <div class="reason-box" id="reason-box">
+                <h4 id="reason-title">加载中...</h4>
+                <div id="reason-content"></div>
+            </div>
+        </div>
+
+        <!-- History Records -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <h3>📅 历史记录</h3>
+                <span class="icon">🕐</span>
+            </div>
+            <div class="history-links" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0;">
+                <a href="dashboard_20260108.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-08 周四</a>
+<a href="dashboard_20260107.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-07 周三</a>
+<a href="dashboard_20260106.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-06 周二</a>
+<a href="dashboard_20260105.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-05 周一</a>
+<a href="dashboard_20260102.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-02 周五</a>
+<a href="dashboard_20260101.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-01 周四</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stock analysis data (will be populated by Python)
+        const stockData = [{"symbol": "600038.SH", "name": "中直股份", "close": 38.13, "daily_change": 3.5297311973934375, "RSI": 80.58823529411755, "MACD": 0.5647335720910676, "MACD_DIF": 0.4209262583567863, "MACD_DEA": 0.13855947231125254, "MA5": 36.903999999999996, "MA10": 36.308, "MA20": 35.6865, "MomentumRate": 8.57061503416858, "VolumeRatio": 2.1540759258739435, "total_score": 78.8010083218297, "RSI_score": 25.882352941176595, "MACD_score": 80.64733572091068, "Trend_score": 100, "Momentum_score": 92.8530751708429, "Volume_score": 94.62227777621831, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "601127.SH", "name": "赛力斯", "close": 125.3, "daily_change": -2.376314764316323, "RSI": 59.3423019431988, "MACD": 2.716860732869563, "MACD_DIF": -1.2364000278498537, "MACD_DEA": -2.594830394284635, "MA5": 124.248, "MA10": 122.24199999999999, "MA20": 121.8525, "MomentumRate": 4.730859244399864, "VolumeRatio": 0.9527575952879926, "total_score": 74.8623988557601, "RSI_score": 50.6576980568012, "MACD_score": 100, "Trend_score": 100, "Momentum_score": 73.65429622199932, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "002371.SZ", "name": "北方华创", "close": 506.67, "daily_change": -1.6976446393232592, "RSI": 72.12575919971421, "MACD": 7.438667414643845, "MACD_DIF": 15.500524951075818, "MACD_DEA": 11.781191243753895, "MA5": 488.33000000000004, "MA10": 476.67600000000004, "MA20": 465.41450000000003, "MomentumRate": 5.244900502679572, "VolumeRatio": 0.7682129157274489, "total_score": 74.06875388839109, "RSI_score": 37.16565440038105, "MACD_score": 100, "Trend_score": 100, "Momentum_score": 76.22450251339785, "Volume_score": 56.953612528176535, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "000933.SZ", "name": "神火股份", "close": 29.3, "daily_change": -2.560691719321584, "RSI": 74.55470737913485, "MACD": 0.603083422819606, "MACD_DIF": 1.0174337623281602, "MACD_DEA": 0.7158920509183572, "MA5": 29.02, "MA10": 27.968, "MA20": 26.949, "MomentumRate": 9.450877848337697, "VolumeRatio": 0.7966694016776974, "total_score": 73.66243964947476, "RSI_score": 33.927056827820195, "MACD_score": 81.03083422819606, "Trend_score": 100, "Momentum_score": 97.25438924168849, "Volume_score": 56.09991794966908, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "002050.SZ", "name": "三花智控", "close": 54.37, "daily_change": -2.4753363228699587, "RSI": 76.9953051643192, "MACD": 2.065575348544095, "MACD_DIF": 2.98491095852669, "MACD_DEA": 1.9521232842546428, "MA5": 55.71, "MA10": 51.872, "MA20": 48.1305, "MomentumRate": 21.1452762923351, "VolumeRatio": 0.6343463075640466, "total_score": 72.4596581412188, "RSI_score": 30.67292644757439, "MACD_score": 95.65575348544095, "Trend_score": 75.0, "Momentum_score": 100, "Volume_score": 60.9696107730786, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "603993.SH", "name": "洛阳钼业", "close": 21.68, "daily_change": -1.3199817933545743, "RSI": 78.93081761006289, "MACD": 0.5666192190424666, "MACD_DIF": 1.1441531122462152, "MACD_DEA": 0.8608435027249819, "MA5": 21.154000000000003, "MA10": 20.13, "MA20": 19.041, "MomentumRate": 16.873315363881396, "VolumeRatio": 0.8658356627980115, "total_score": 71.75168707540149, "RSI_score": 28.092243186582813, "MACD_score": 80.66619219042467, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "688050.SH", "name": "香农芯创", "close": 64.14, "daily_change": 1.3910844135314626, "RSI": 59.84095427435386, "MACD": 0.7128549442939096, "MACD_DIF": 0.19280960360332955, "MACD_DEA": -0.16361786854362528, "MA5": 62.952, "MA10": 62.624, "MA20": 61.986000000000004, "MomentumRate": 4.70127326150833, "VolumeRatio": 0.9779411214323674, "total_score": 71.15879229522538, "RSI_score": 50.15904572564614, "MACD_score": 82.12854944293909, "Trend_score": 100, "Momentum_score": 73.50636630754165, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "588940.SH", "name": "科创ETF", "close": 1.493, "daily_change": 0.6743088334457248, "RSI": 80.36529680365292, "MACD": 0.02975440045760677, "MACD_DIF": 0.023915801847717466, "MACD_DEA": 0.009038601618914082, "MA5": 1.4536000000000002, "MA10": 1.4205999999999999, "MA20": 1.3899, "MomentumRate": 8.58181818181819, "VolumeRatio": 1.257076995661494, "total_score": 70.4197098090616, "RSI_score": 26.1796042617961, "MACD_score": 75.29754400457607, "Trend_score": 100, "Momentum_score": 92.90909090909095, "Volume_score": 57.712309869844816, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "513310.SH", "name": "中韩半导体ETF", "close": 3.011, "daily_change": -3.6788227767114434, "RSI": 81.45491803278692, "MACD": 0.1317553631745009, "MACD_DIF": 0.12426541487252374, "MACD_DEA": 0.05838773328527329, "MA5": 2.8924, "MA10": 2.7215000000000003, "MA20": 2.58125, "MomentumRate": 21.31345688960515, "VolumeRatio": 0.9185040259642164, "total_score": 70.20886591760583, "RSI_score": 24.726775956284108, "MACD_score": 76.31755363174501, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "562030.SH", "name": "信创ETF", "close": 0.557, "daily_change": 1.4571948998178597, "RSI": 90.1639344262295, "MACD": 0.013572205113444452, "MACD_DIF": 0.003285330962669697, "MACD_DEA": -0.0035007715940525296, "MA5": 0.5444000000000001, "MA10": 0.5316000000000001, "MA20": 0.5204500000000001, "MomentumRate": 9.64566929133859, "VolumeRatio": 1.4062594192705717, "total_score": 69.73332103686104, "RSI_score": 13.114754098360663, "MACD_score": 75.13572205113445, "Trend_score": 100, "Momentum_score": 98.22834645669295, "Volume_score": 62.18778257811715, "signal": "SELL", "signal_reason": "⚠️ RSI严重超买(>82)，建议止盈"}, {"symbol": "159971.SZ", "name": "创业板ETF", "close": 1.146, "daily_change": -0.9507346585998389, "RSI": 63.63636363636358, "MACD": 0.08385749199145281, "MACD_DIF": -0.11367568126454808, "MACD_DEA": -0.15560442726027449, "MA5": 1.1425999999999998, "MA10": 1.1333, "MA20": 1.11555, "MomentumRate": 3.0575539568345147, "VolumeRatio": 0.6627699781860023, "total_score": 69.5213763444287, "RSI_score": 46.36363636363642, "MACD_score": 75.83857491991454, "Trend_score": 100, "Momentum_score": 65.28776978417257, "Volume_score": 60.116900654419936, "signal": "HOLD", "signal_reason": "📉 信号良好但缩量，等待放量确认"}, {"symbol": "562500.SH", "name": "机器人ETF", "close": 1.044, "daily_change": 1.0648596321394033, "RSI": 82.6086956521739, "MACD": 0.019993341189002953, "MACD_DIF": 0.01972005872817817, "MACD_DEA": 0.009723388133676692, "MA5": 1.0348, "MA10": 1.0111999999999999, "MA20": 0.9788500000000001, "MomentumRate": 10.476190476190487, "VolumeRatio": 0.7136261853268143, "total_score": 67.38667732441282, "RSI_score": 23.188405797101456, "MACD_score": 75.19993341189003, "Trend_score": 100, "Momentum_score": 100, "Volume_score": 38.545047413072574, "signal": "SELL", "signal_reason": "⚠️ RSI严重超买(>82)，建议止盈"}, {"symbol": "300059.SZ", "name": "东方财富", "close": 24.0, "daily_change": -2.1606196494088903, "RSI": 59.61945031712475, "MACD": 0.3995939517085261, "MACD_DIF": 0.1426219474580428, "MACD_DEA": -0.057175028396220226, "MA5": 24.114, "MA10": 23.75, "MA20": 23.358, "MomentumRate": 4.257167680278021, "VolumeRatio": 0.9096533332269585, "total_score": 65.13246552027013, "RSI_score": 50.38054968287525, "MACD_score": 78.99593951708526, "Trend_score": 75.0, "Momentum_score": 71.28583840139011, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "600489.SH", "name": "中金黄金", "close": 24.25, "daily_change": -1.3024013024013015, "RSI": 64.6319569120287, "MACD": 0.20379265381504752, "MACD_DIF": 0.5477420637705421, "MACD_DEA": 0.44584573686301837, "MA5": 24.224, "MA10": 23.796, "MA20": 23.27, "MomentumRate": 0.49730625777041443, "VolumeRatio": 0.9420285483393246, "total_score": 64.97850018299476, "RSI_score": 45.3680430879713, "MACD_score": 77.03792653815047, "Trend_score": 100, "Momentum_score": 52.48653128885207, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "600938.SH", "name": "中国海油", "close": 28.39, "daily_change": -0.6995452955578796, "RSI": 50.9915014164306, "MACD": 0.04270310023380042, "MACD_DIF": 0.20892060834378512, "MACD_DEA": 0.1875690582268849, "MA5": 29.198, "MA10": 28.933999999999997, "MA20": 28.541500000000003, "MomentumRate": 0.9960868018498795, "VolumeRatio": 0.48189335894142993, "total_score": 60.99183256538278, "RSI_score": 59.0084985835694, "MACD_score": 75.427031002338, "Trend_score": 50.0, "Momentum_score": 54.9804340092494, "Volume_score": 65.5431992317571, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "300274.SZ", "name": "阳光电源", "close": 170.95, "daily_change": -1.4470194857604146, "RSI": 51.34633240482822, "MACD": 0.612085560643858, "MACD_DIF": -0.6958286213983058, "MACD_DEA": -1.0018714017202348, "MA5": 171.88000000000002, "MA10": 172.903, "MA20": 171.0365, "MomentumRate": 1.7620096434311443, "VolumeRatio": 1.0434691800141414, "total_score": 54.716914283753226, "RSI_score": 58.65366759517178, "MACD_score": 81.12085560643858, "Trend_score": 25.0, "Momentum_score": 58.810048217155725, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "515880.SH", "name": "通信ETF", "close": 3.128, "daily_change": -0.949968334388851, "RSI": 64.41351888667992, "MACD": -0.007122187999335006, "MACD_DIF": 0.09388438309740277, "MACD_DEA": 0.09744547709707027, "MA5": 3.1282, "MA10": 3.1248, "MA20": 3.0479, "MomentumRate": 1.7566688353936328, "VolumeRatio": 0.7933804653493666, "total_score": 52.09943788996278, "RSI_score": 45.586481113320076, "MACD_score": 24.92877812000665, "Trend_score": 75.0, "Momentum_score": 58.783344176968164, "Volume_score": 56.198586039519, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "600660.SH", "name": "福耀玻璃", "close": 63.15, "daily_change": -2.1385402138540233, "RSI": 58.34633385335413, "MACD": 0.46772098413710944, "MACD_DIF": -0.008250457197320316, "MACD_DEA": -0.24211094926587504, "MA5": 64.26599999999999, "MA10": 63.932, "MA20": 62.9985, "MomentumRate": 0.7498404594767053, "VolumeRatio": 1.3582204854738276, "total_score": 50.224913229710964, "RSI_score": 51.65366614664587, "MACD_score": 79.6772098413711, "Trend_score": 50.0, "Momentum_score": 53.749202297383526, "Volume_score": 16.04448786315431, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "601138.SH", "name": "工业富联", "close": 61.33, "daily_change": -2.882026920031666, "RSI": 49.64360587002096, "MACD": 0.13850625379835768, "MACD_DIF": -9.378971029150307e-06, "MACD_DEA": -0.06926250587020799, "MA5": 62.85, "MA10": 63.94199999999999, "MA20": 62.4165, "MomentumRate": -2.433980273623928, "VolumeRatio": 1.1599888474306053, "total_score": 49.9143110599686, "RSI_score": 60.35639412997904, "MACD_score": 76.38506253798357, "Trend_score": 25.0, "Momentum_score": 37.83009863188036, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "600036.SH", "name": "招商银行", "close": 41.58, "daily_change": -1.3523131672597888, "RSI": 50.69124423963129, "MACD": 0.050367941461443855, "MACD_DIF": -0.10707142564122307, "MACD_DEA": -0.132255396371945, "MA5": 42.181999999999995, "MA10": 42.037, "MA20": 41.927499999999995, "MomentumRate": -0.7874015748031457, "VolumeRatio": 1.3828937811568085, "total_score": 49.260616554409445, "RSI_score": 59.30875576036871, "MACD_score": 75.50367941461444, "Trend_score": 50.0, "Momentum_score": 46.06299212598427, "Volume_score": 15.427655471079788, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "513300.SH", "name": "纳指ETF", "close": 2.336, "daily_change": -0.4262574595055524, "RSI": 52.63157894736843, "MACD": 0.00027551570938390973, "MACD_DIF": -0.006590121430155804, "MACD_DEA": -0.006727879284847759, "MA5": 2.3378, "MA10": 2.3395, "MA20": 2.3419499999999998, "MomentumRate": -1.2679628064243553, "VolumeRatio": 0.6505439285747535, "total_score": 47.30300886407221, "RSI_score": 57.36842105263157, "MACD_score": 75.00275515709384, "Trend_score": 0, "Momentum_score": 43.66018596787822, "Volume_score": 60.483682142757395, "signal": "HOLD", "signal_reason": "缩量观望"}, {"symbol": "518680.SH", "name": "金ETF", "close": 9.94, "daily_change": -0.08041817450744615, "RSI": 58.534621578099845, "MACD": -0.026919227779271693, "MACD_DIF": 0.12325372598011697, "MACD_DEA": 0.13671333986975281, "MA5": 9.9056, "MA10": 9.9461, "MA20": 9.835899999999999, "MomentumRate": -1.2713547874453728, "VolumeRatio": 0.9312131573380861, "total_score": 43.96788244137612, "RSI_score": 51.465378421900155, "MACD_score": 24.730807722207285, "Trend_score": 50.0, "Momentum_score": 43.64322606277314, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "002463.SZ", "name": "沪电股份", "close": 71.23, "daily_change": -3.1147986942328565, "RSI": 48.61660079051384, "MACD": -0.09790180085843181, "MACD_DIF": 1.0900918690375363, "MACD_DEA": 1.1390427694667522, "MA5": 73.494, "MA10": 73.623, "MA20": 71.87349999999999, "MomentumRate": -0.2660319238308565, "VolumeRatio": 1.03243376138172, "total_score": 41.814844316349514, "RSI_score": 61.38339920948616, "MACD_score": 24.02098199141568, "Trend_score": 25.0, "Momentum_score": 48.66984038084572, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "159509.SZ", "name": "纳指科技ETF", "close": 2.299, "daily_change": -1.3728013728013688, "RSI": 47.265624999999964, "MACD": -0.009295910547871856, "MACD_DIF": 0.012923999682658671, "MACD_DEA": 0.0175719549565946, "MA5": 2.3183999999999996, "MA10": 2.3154, "MA20": 2.3197, "MomentumRate": -1.4995715509854388, "VolumeRatio": 0.8124634373826715, "total_score": 41.028711627918824, "RSI_score": 62.734375000000036, "MACD_score": 24.90704089452128, "Trend_score": 25.0, "Momentum_score": 42.502142245072804, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300750.SZ", "name": "宁德时代", "close": 369.21, "daily_change": -0.4851621250101079, "RSI": 36.854764107308064, "MACD": -0.895815544074928, "MACD_DIF": -2.8310155043722034, "MACD_DEA": -2.3831077323347394, "MA5": 371.794, "MA10": 372.052, "MA20": 376.348, "MomentumRate": -2.3512298333774244, "VolumeRatio": 1.0439376185412677, "total_score": 35.48618625701111, "RSI_score": 73.14523589269194, "MACD_score": 16.04184455925072, "Trend_score": 0, "Momentum_score": 38.24385083311288, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300308.SZ", "name": "中际旭创", "close": 595.45, "daily_change": -3.8976759199483513, "RSI": 51.26943606405199, "MACD": -10.73253045062117, "MACD_DIF": 21.43424741888407, "MACD_DEA": 26.800512644194654, "MA5": 610.762, "MA10": 620.501, "MA20": 604.1925, "MomentumRate": -4.114331723027368, "VolumeRatio": 1.0394627129662792, "total_score": 32.63178106416223, "RSI_score": 58.73056393594801, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 29.42834138486316, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300502.SZ", "name": "新易盛", "close": 410.34, "daily_change": -2.369735902926484, "RSI": 35.005031868500495, "MACD": -14.065689310725844, "MACD_DIF": 11.604530756961822, "MACD_DEA": 18.637375412324744, "MA5": 421.14, "MA10": 434.3, "MA20": 434.0335, "MomentumRate": -10.40611353711791, "VolumeRatio": 0.8986451739523605, "total_score": 29.9989936262999, "RSI_score": 74.9949681314995, "MACD_score": 0, "Trend_score": 25.0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            if (stockData && stockData.length > 0) {
+                updateDashboard(stockData);
+            }
+        });
+
+        function updateDashboard(data) {
+            // Update time
+            document.getElementById('update-time').textContent = 
+                '数据更新时间: ' + new Date().toLocaleString('zh-CN');
+
+            // Top recommendation (Prioritize first BUY candidate, otherwise top score)
+            const topBuy = data.find(d => d.signal === 'BUY');
+            const top = topBuy || data[0];
+            
+            document.getElementById('top-symbol').textContent = top.name || top.symbol;
+            document.getElementById('top-score').textContent = top.total_score.toFixed(1);
+
+            // Indicators
+            const indicators = document.getElementById('top-indicators');
+            indicators.innerHTML = '';
+            
+            // RSI pill
+            let rsiClass = 'pill';
+            if (top.RSI < 30) rsiClass += ' success';
+            else if (top.RSI > 70) rsiClass += ' danger';
+            indicators.innerHTML += `<span class="${rsiClass}">RSI: ${top.RSI.toFixed(1)}</span>`;
+            
+            // MACD pill
+            let macdClass = top.MACD > 0 ? 'pill success' : 'pill danger';
+            indicators.innerHTML += `<span class="${macdClass}">MACD: ${top.MACD > 0 ? '金叉' : '死叉'}</span>`;
+            
+            // Trend pill
+            let trendClass = top.Trend_score >= 75 ? 'pill success' : (top.Trend_score <= 25 ? 'pill danger' : 'pill warning');
+            indicators.innerHTML += `<span class="${trendClass}">趋势: ${top.Trend_score.toFixed(0)}分</span>`;
+            
+            // Momentum pill
+            let momClass = top.MomentumRate > 0 ? 'pill success' : 'pill danger';
+            let momStr = top.MomentumRate >= 0 ? '+' + top.MomentumRate.toFixed(1) + '%' : top.MomentumRate.toFixed(1) + '%';
+            indicators.innerHTML += `<span class="${momClass}">动量: ${momStr}</span>`;
+            
+            // Volume pill
+            let volClass = 'pill';
+            let volStr = '';
+            if (top.VolumeRatio > 1.5) {
+                volClass = 'pill success';
+                volStr = '放量 (' + top.VolumeRatio.toFixed(1) + 'x)';
+            } else if (top.VolumeRatio < 0.7) {
+                volClass = 'pill warning';
+                volStr = '缩量 (' + top.VolumeRatio.toFixed(1) + 'x)';
+            } else {
+                volStr = '量比 ' + top.VolumeRatio.toFixed(1) + 'x';
+            }
+            indicators.innerHTML += `<span class="${volClass}">${volStr}</span>`;
+
+            // Render charts
+            renderScoreChart(data);
+            renderBreakdownChart(top);
+            renderRsiChart(data);
+            renderMomentumChart(data);
+
+            // Render ranking table
+            renderRankingTable(data);
+
+            // Render signals summary
+            renderSignals(data);
+
+            // Render portfolio
+            renderPortfolio(data);
+
+            // Render reasons
+            renderReasons(top);
+        }
+
+        function renderSignals(data) {
+            const buyContainer = document.getElementById('buy-candidates');
+            const sellContainer = document.getElementById('sell-candidates');
+            
+            const buyCandidates = data.filter(d => d.signal === 'BUY');
+            const sellCandidates = data.filter(d => d.signal === 'SELL');
+            
+            // 建议仓位比例 (按排名分配)
+            const positionPcts = [30, 25, 20, 15, 10];
+            
+            // Render buy candidates with position percentage
+            if (buyCandidates.length > 0) {
+                buyContainer.innerHTML = buyCandidates.slice(0, 5).map((stock, i) => {
+                    const pct = positionPcts[i] || 10;
+                    return `
+                    <div class="signal-item buy">
+                        <span class="symbol">${stock.name || stock.symbol}</span>
+                        <span class="reason">${stock.signal_reason || ''}</span>
+                        <span style="background: rgba(0,212,255,0.2); color: #00d4ff; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 8px;">建议${pct}%</span>
+                        <span class="score">${stock.total_score.toFixed(1)}分</span>
+                    </div>`;
+                }).join('');
+            } else {
+                buyContainer.innerHTML = '<div class="no-signal">无明确买入信号</div>';
+            }
+            
+            // Render sell candidates
+            if (sellCandidates.length > 0) {
+                sellContainer.innerHTML = sellCandidates.slice(0, 5).map(stock => `
+                    <div class="signal-item sell">
+                        <span class="symbol">${stock.name || stock.symbol}</span>
+                        <span class="reason">${stock.signal_reason || ''}</span>
+                        <span class="score">${stock.total_score.toFixed(1)}分</span>
+                    </div>
+                `).join('');
+            } else {
+                sellContainer.innerHTML = '<div class="no-signal">无明确卖出信号</div>';
+            }
+        }
+
+        function renderScoreChart(data) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: '综合得分',
+                        data: data.map(d => d.total_score),
+                        backgroundColor: data.map((d, i) => 
+                            i === 0 ? 'rgba(0, 212, 255, 0.8)' : 'rgba(0, 212, 255, 0.3)'
+                        ),
+                        borderColor: 'rgba(0, 212, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#a0a0b0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBreakdownChart(top) {
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['RSI', 'MACD', '趋势', '动量', '量能'],
+                    datasets: [{
+                        data: [
+                            top.RSI_score * 0.20,
+                            top.MACD_score * 0.20,
+                            top.Trend_score * 0.20,
+                            top.Momentum_score * 0.20,
+                            top.Volume_score * 0.20
+                        ],
+                        backgroundColor: [
+                            'rgba(0, 212, 255, 0.8)',
+                            'rgba(123, 44, 191, 0.8)',
+                            'rgba(0, 255, 136, 0.8)',
+                            'rgba(255, 217, 61, 0.8)',
+                            'rgba(255, 136, 0, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRsiChart(data) {
+            const ctx = document.getElementById('rsiChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: 'RSI',
+                        data: data.map(d => d.RSI),
+                        backgroundColor: data.map(d => {
+                            if (d.RSI < 30) return 'rgba(0, 255, 136, 0.7)';
+                            if (d.RSI > 70) return 'rgba(255, 107, 107, 0.7)';
+                            return 'rgba(255, 217, 61, 0.7)';
+                        }),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 30,
+                                    yMax: 30,
+                                    borderColor: 'rgba(0, 255, 136, 0.5)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: 'rgba(255, 107, 107, 0.5)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#a0a0b0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMomentumChart(data) {
+            const ctx = document.getElementById('momentumChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: '10日动量 (%)',
+                        data: data.map(d => d.MomentumRate),
+                        backgroundColor: data.map(d => 
+                            d.MomentumRate >= 0 ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 107, 107, 0.7)'
+                        ),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { 
+                                color: '#a0a0b0',
+                                callback: value => value + '%'
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRankingTable(data) {
+            const tbody = document.getElementById('ranking-tbody');
+            tbody.innerHTML = data.map((d, i) => {
+                const rankClass = i < 3 ? `rank-${i + 1}` : '';
+                const changeClass = d.daily_change >= 0 ? 'positive' : 'negative';
+                const changeStr = d.daily_change >= 0 ? '+' + d.daily_change.toFixed(2) + '%' : d.daily_change.toFixed(2) + '%';
+                const macdStr = d.MACD > 0 ? '金叉' : '死叉';
+                const momStr = d.MomentumRate >= 0 ? '+' + d.MomentumRate.toFixed(1) + '%' : d.MomentumRate.toFixed(1) + '%';
+                
+                // Volume ratio with color
+                let volClass = '';
+                let volStr = d.VolumeRatio.toFixed(1) + 'x';
+                if (d.VolumeRatio > 1.5) {
+                    volClass = 'positive';
+                    volStr = '放量 ' + volStr;
+                } else if (d.VolumeRatio < 0.7) {
+                    volClass = 'negative';
+                    volStr = '缩量 ' + volStr;
+                }
+                
+                return `
+                    <tr>
+                        <td class="rank ${rankClass}">#${i + 1}</td>
+                        <td class="symbol">${d.name || d.symbol}</td>
+                        <td>$${d.close.toFixed(2)}</td>
+                        <td class="${changeClass}">${changeStr}</td>
+                        <td>${d.RSI.toFixed(1)}</td>
+                        <td>${macdStr}</td>
+                        <td>${d.Trend_score.toFixed(0)}</td>
+                        <td class="${d.MomentumRate >= 0 ? 'positive' : 'negative'}">${momStr}</td>
+                        <td class="${volClass}">${volStr}</td>
+                        <td class="score">${d.total_score.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderReasons(top) {
+            document.getElementById('reason-title').textContent = `为什么推荐 ${top.name || top.symbol}？`;
+            
+            const reasons = [];
+            
+            // RSI
+            let rsiReason = '';
+            if (top.RSI < 30) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>超卖区(&lt;30)</strong>，股价可能被低估，是较好的买入时机`;
+            } else if (top.RSI < 50) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>偏低区(30-50)</strong>，存在上涨空间`;
+            } else if (top.RSI < 70) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>正常区间(50-70)</strong>，趋势健康`;
+            } else {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>超买区(&gt;70)</strong>，需注意回调风险`;
+            }
+            reasons.push({ emoji: '📈', text: `<strong>RSI分析:</strong> ${rsiReason}` });
+            
+            // MACD
+            let macdReason = top.MACD > 0 
+                ? `DIF>DEA 形成<strong>金叉</strong>，买入信号；MACD柱=${top.MACD.toFixed(2)}>0，<strong>多头占优</strong>`
+                : `DIF<DEA 形成<strong>死叉</strong>，卖出信号；MACD柱=${top.MACD.toFixed(2)}<0，<strong>空头占优</strong>`;
+            reasons.push({ emoji: '📊', text: `<strong>MACD分析:</strong> ${macdReason}` });
+            
+            // Trend
+            let trendReason = '';
+            if (top.Trend_score >= 100) {
+                trendReason = '<strong>完美多头排列</strong>(价格>MA5>MA10>MA20)，强势上涨趋势';
+            } else if (top.Trend_score >= 75) {
+                trendReason = '价格站上短中期均线，<strong>趋势向好</strong>';
+            } else if (top.Trend_score <= 25) {
+                trendReason = '<strong>空头排列</strong>，下跌趋势';
+            } else {
+                trendReason = '均线交织，趋势不明朗';
+            }
+            reasons.push({ emoji: '📉', text: `<strong>趋势分析:</strong> ${trendReason}` });
+            
+            // Momentum
+            let momReason = '';
+            if (top.MomentumRate > 5) {
+                momReason = `10日动量+${top.MomentumRate.toFixed(1)}%，<strong>强劲上涨动能</strong>`;
+            } else if (top.MomentumRate > 0) {
+                momReason = `10日动量+${top.MomentumRate.toFixed(1)}%，<strong>温和上涨</strong>`;
+            } else if (top.MomentumRate > -5) {
+                momReason = `10日动量${top.MomentumRate.toFixed(1)}%，<strong>小幅回调</strong>`;
+            } else {
+                momReason = `10日动量${top.MomentumRate.toFixed(1)}%，<strong>下跌动能较强</strong>`;
+            }
+            reasons.push({ emoji: '🚀', text: `<strong>动量分析:</strong> ${momReason}` });
+            
+            // Volume
+            let volReason = '';
+            if (top.VolumeRatio > 2.0) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>显著放量</strong>，市场关注度高`;
+            } else if (top.VolumeRatio > 1.5) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>温和放量</strong>，交投活跃`;
+            } else if (top.VolumeRatio > 0.7) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，成交量正常`;
+            } else {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>明显缩量</strong>，交投清淡`;
+            }
+            reasons.push({ emoji: '📊', text: `<strong>量能分析:</strong> ${volReason}` });
+            
+            // Summary
+            let summary = '';
+            if (top.total_score >= 80) {
+                summary = '综合指标显示<strong>强烈买入信号</strong>';
+            } else if (top.total_score >= 60) {
+                summary = '综合指标<strong>偏向看多</strong>';
+            } else if (top.total_score >= 40) {
+                summary = '综合指标中性，<strong>建议观望</strong>';
+            } else {
+                summary = '综合指标偏空，<strong>暂不建议买入</strong>';
+            }
+            reasons.push({ emoji: '💡', text: `<strong>综合评价:</strong> ${summary}` });
+            
+            document.getElementById('reason-content').innerHTML = reasons.map(r => `
+                <div class="reason-item">
+                    <span class="emoji">${r.emoji}</span>
+                    <span class="text">${r.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderPortfolio(data) {
+            const container = document.getElementById('portfolio-card');
+            const listContainer = document.getElementById('portfolio-list');
+            
+            // 1. 筛选逻辑: BUY + 优质 HOLD (Score>=65 && Trend>=60)
+            let portfolio = data.filter(d => 
+                d.signal === 'BUY' || 
+                (d.signal === 'HOLD' && d.total_score >= 65 && d.Trend_score >= 60)
+            );
+            
+            if (portfolio.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            // 2. 权重计算
+            let totalWeightScore = 0;
+            portfolio = portfolio.map(d => {
+                let weightScore = d.total_score;
+                if (d.signal === 'BUY') weightScore *= 1.2; // 给予 BUY 信号 20% 的权重奖励
+                totalWeightScore += weightScore;
+                return { ...d, weightScore };
+            });
+            
+            // 归一化并排序
+            portfolio.forEach(d => {
+                d.weight = (d.weightScore / totalWeightScore) * 100;
+            });
+            portfolio.sort((a, b) => b.weight - a.weight);
+            
+            // 3. 渲染列表
+            const colors = ['#00d4ff', '#7b2cbf', '#00ff88', '#ffd93d', '#ff6b6b', '#ff9f43', '#54a0ff'];
+            listContainer.innerHTML = portfolio.map((stock, i) => {
+                const color = colors[i % colors.length];
+                const typeLabel = stock.signal === 'BUY' ? '🟢 信号买入' : '⚪️ 强势持有';
+                return `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 50px; font-weight: bold; color: ${color};">${(stock.weight).toFixed(1)}%</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-weight: 600;">${stock.name || stock.symbol}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${typeLabel}</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; width: ${stock.weight}%; background: ${color};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 4. 渲染图表
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            if (window.portfolioChartInstance) window.portfolioChartInstance.destroy();
+            
+            window.portfolioChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: portfolio.map(d => d.name || d.symbol),
+                    datasets: [{
+                        data: portfolio.map(d => d.weight),
+                        backgroundColor: portfolio.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
