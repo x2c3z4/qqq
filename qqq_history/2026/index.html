@@ -59,7 +59,12 @@
         }
         .month-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
         .month-return { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
-        .month-stats { font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 10px; }
+        .month-stats { font-size: 0.85rem; margin-bottom: 6px; display: flex; justify-content: center; gap: 10px; }
+        .month-signals { font-size: 0.75rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 6px; }
+        .signal-tag { padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+        .signal-tag.buy { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .signal-tag.sell { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .signal-tag.hold { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
         .month-days { font-size: 0.8rem; color: var(--text-secondary); }
         footer { text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
     </style>
@@ -79,20 +84,25 @@
             
         <a href="index_01.html" class="month-card">
             <div class="month-title">1月</div>
-            <div class="month-return" style="color: #00ff88">+1.0%</div>
+            <div class="month-return" style="color: #00ff88">+2.0%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 2</span>
-                <span style="color: #ff6b6b">📉 4</span>
-                <span style="color: #ffd93d">⏸️ 3</span>
+                <span style="color: #ff6b6b">📉 5</span>
+                <span style="color: #00ff88">📈 7</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
             </div>
-            <div class="month-days">9 交易日</div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 2</span>
+                <span class="signal-tag sell">Sell 4</span>
+                <span class="signal-tag hold">Hold 6</span>
+            </div>
+            <div class="month-days">12 交易日</div>
         </a>
 
         </div>
         
         <footer>
             <p>⚠️ 本分析仅供参考，不构成投资建议</p>
-            <p>生成时间: 2026-01-09 21:01:08</p>
+            <p>生成时间: 2026-01-12 14:01:00</p>
         </footer>
     </div>
 </body>

@@ -59,7 +59,12 @@
         }
         .month-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
         .month-return { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
-        .month-stats { font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 10px; }
+        .month-stats { font-size: 0.85rem; margin-bottom: 6px; display: flex; justify-content: center; gap: 10px; }
+        .month-signals { font-size: 0.75rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 6px; }
+        .signal-tag { padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+        .signal-tag.buy { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .signal-tag.sell { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .signal-tag.hold { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
         .month-days { font-size: 0.8rem; color: var(--text-secondary); }
         footer { text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
     </style>
@@ -81,9 +86,14 @@
             <div class="month-title">1月</div>
             <div class="month-return" style="color: #00ff88">+2.2%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
-                <span style="color: #ff6b6b">📉 14</span>
-                <span style="color: #ffd93d">⏸️ 10</span>
+                <span style="color: #ff6b6b">📉 15</span>
+                <span style="color: #00ff88">📈 16</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 7</span>
+                <span class="signal-tag sell">Sell 14</span>
+                <span class="signal-tag hold">Hold 10</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -92,9 +102,14 @@
             <div class="month-title">2月</div>
             <div class="month-return" style="color: #ff6b6b">-2.7%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 8</span>
-                <span style="color: #ff6b6b">📉 6</span>
-                <span style="color: #ffd93d">⏸️ 14</span>
+                <span style="color: #ff6b6b">📉 14</span>
+                <span style="color: #00ff88">📈 14</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 8</span>
+                <span class="signal-tag sell">Sell 6</span>
+                <span class="signal-tag hold">Hold 14</span>
             </div>
             <div class="month-days">28 交易日</div>
         </a>
@@ -103,9 +118,14 @@
             <div class="month-title">3月</div>
             <div class="month-return" style="color: #ff6b6b">-7.6%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
-                <span style="color: #ff6b6b">📉 18</span>
-                <span style="color: #ffd93d">⏸️ 6</span>
+                <span style="color: #ff6b6b">📉 14</span>
+                <span style="color: #00ff88">📈 17</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 7</span>
+                <span class="signal-tag sell">Sell 18</span>
+                <span class="signal-tag hold">Hold 6</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -114,9 +134,14 @@
             <div class="month-title">4月</div>
             <div class="month-return" style="color: #00ff88">+0.6%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 8</span>
-                <span style="color: #ff6b6b">📉 10</span>
-                <span style="color: #ffd93d">⏸️ 12</span>
+                <span style="color: #ff6b6b">📉 14</span>
+                <span style="color: #00ff88">📈 16</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 8</span>
+                <span class="signal-tag sell">Sell 10</span>
+                <span class="signal-tag hold">Hold 12</span>
             </div>
             <div class="month-days">30 交易日</div>
         </a>
@@ -125,9 +150,14 @@
             <div class="month-title">5月</div>
             <div class="month-return" style="color: #00ff88">+7.8%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
-                <span style="color: #ff6b6b">📉 18</span>
-                <span style="color: #ffd93d">⏸️ 12</span>
+                <span style="color: #ff6b6b">📉 14</span>
+                <span style="color: #00ff88">📈 17</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 1</span>
+                <span class="signal-tag sell">Sell 18</span>
+                <span class="signal-tag hold">Hold 12</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -136,9 +166,14 @@
             <div class="month-title">6月</div>
             <div class="month-return" style="color: #00ff88">+6.4%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 0</span>
-                <span style="color: #ff6b6b">📉 7</span>
-                <span style="color: #ffd93d">⏸️ 23</span>
+                <span style="color: #ff6b6b">📉 12</span>
+                <span style="color: #00ff88">📈 18</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 0</span>
+                <span class="signal-tag sell">Sell 7</span>
+                <span class="signal-tag hold">Hold 23</span>
             </div>
             <div class="month-days">30 交易日</div>
         </a>
@@ -147,9 +182,14 @@
             <div class="month-title">7月</div>
             <div class="month-return" style="color: #00ff88">+3.3%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
                 <span style="color: #ff6b6b">📉 12</span>
-                <span style="color: #ffd93d">⏸️ 18</span>
+                <span style="color: #00ff88">📈 19</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 1</span>
+                <span class="signal-tag sell">Sell 12</span>
+                <span class="signal-tag hold">Hold 18</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -158,9 +198,14 @@
             <div class="month-title">8月</div>
             <div class="month-return" style="color: #00ff88">+3.0%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 4</span>
-                <span style="color: #ff6b6b">📉 11</span>
-                <span style="color: #ffd93d">⏸️ 16</span>
+                <span style="color: #ff6b6b">📉 17</span>
+                <span style="color: #00ff88">📈 14</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 4</span>
+                <span class="signal-tag sell">Sell 11</span>
+                <span class="signal-tag hold">Hold 16</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -169,9 +214,14 @@
             <div class="month-title">9月</div>
             <div class="month-return" style="color: #00ff88">+5.4%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 1</span>
-                <span style="color: #ff6b6b">📉 9</span>
-                <span style="color: #ffd93d">⏸️ 20</span>
+                <span style="color: #ff6b6b">📉 7</span>
+                <span style="color: #00ff88">📈 23</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 1</span>
+                <span class="signal-tag sell">Sell 9</span>
+                <span class="signal-tag hold">Hold 20</span>
             </div>
             <div class="month-days">30 交易日</div>
         </a>
@@ -180,9 +230,14 @@
             <div class="month-title">10月</div>
             <div class="month-return" style="color: #00ff88">+4.3%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 7</span>
-                <span style="color: #ff6b6b">📉 5</span>
-                <span style="color: #ffd93d">⏸️ 19</span>
+                <span style="color: #ff6b6b">📉 13</span>
+                <span style="color: #00ff88">📈 18</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 7</span>
+                <span class="signal-tag sell">Sell 5</span>
+                <span class="signal-tag hold">Hold 19</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -191,9 +246,14 @@
             <div class="month-title">11月</div>
             <div class="month-return" style="color: #ff6b6b">-1.6%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 0</span>
-                <span style="color: #ff6b6b">📉 21</span>
-                <span style="color: #ffd93d">⏸️ 9</span>
+                <span style="color: #ff6b6b">📉 11</span>
+                <span style="color: #00ff88">📈 19</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 0</span>
+                <span class="signal-tag sell">Sell 21</span>
+                <span class="signal-tag hold">Hold 9</span>
             </div>
             <div class="month-days">30 交易日</div>
         </a>
@@ -202,9 +262,14 @@
             <div class="month-title">12月</div>
             <div class="month-return" style="color: #ff6b6b">-0.3%</div>
             <div class="month-stats">
-                <span style="color: #00ff88">📈 13</span>
-                <span style="color: #ff6b6b">📉 5</span>
-                <span style="color: #ffd93d">⏸️ 13</span>
+                <span style="color: #ff6b6b">📉 15</span>
+                <span style="color: #00ff88">📈 16</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="month-signals">
+                <span class="signal-tag buy">Buy 13</span>
+                <span class="signal-tag sell">Sell 5</span>
+                <span class="signal-tag hold">Hold 13</span>
             </div>
             <div class="month-days">31 交易日</div>
         </a>
@@ -213,7 +278,7 @@
         
         <footer>
             <p>⚠️ 本分析仅供参考，不构成投资建议</p>
-            <p>生成时间: 2026-01-09 21:01:08</p>
+            <p>生成时间: 2026-01-12 14:01:00</p>
         </footer>
     </div>
 </body>

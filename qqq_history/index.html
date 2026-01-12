@@ -60,7 +60,12 @@
         }
         .year-title { font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; color: var(--accent-primary); }
         .year-return { font-size: 2rem; font-weight: bold; margin-bottom: 15px; }
-        .year-stats { font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: center; gap: 12px; }
+        .year-stats { font-size: 0.9rem; margin-bottom: 8px; display: flex; justify-content: center; gap: 12px; }
+        .year-signals { font-size: 0.8rem; margin-bottom: 10px; display: flex; justify-content: center; gap: 8px; }
+        .signal-tag { padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+        .signal-tag.buy { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .signal-tag.sell { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .signal-tag.hold { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
         .year-days { font-size: 0.85rem; color: var(--text-secondary); }
         footer { text-align: center; margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
     </style>
@@ -80,22 +85,32 @@
             
         <a href="2026/index.html" class="year-card">
             <div class="year-title">2026年</div>
-            <div class="year-return" style="color: #00ff88">+1.0%</div>
+            <div class="year-return" style="color: #00ff88">+2.0%</div>
             <div class="year-stats">
-                <span style="color: #00ff88">📈 2</span>
-                <span style="color: #ff6b6b">📉 4</span>
-                <span style="color: #ffd93d">⏸️ 3</span>
+                <span style="color: #ff6b6b">📉 5</span>
+                <span style="color: #00ff88">📈 7</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
             </div>
-            <div class="year-days">9 交易日</div>
+            <div class="year-signals">
+                <span class="signal-tag buy">Buy 2</span>
+                <span class="signal-tag sell">Sell 4</span>
+                <span class="signal-tag hold">Hold 6</span>
+            </div>
+            <div class="year-days">12 交易日</div>
         </a>
 
         <a href="2025/index.html" class="year-card">
             <div class="year-title">2025年</div>
             <div class="year-return" style="color: #00ff88">+20.8%</div>
             <div class="year-stats">
-                <span style="color: #00ff88">📈 57</span>
-                <span style="color: #ff6b6b">📉 136</span>
-                <span style="color: #ffd93d">⏸️ 172</span>
+                <span style="color: #ff6b6b">📉 158</span>
+                <span style="color: #00ff88">📈 207</span>
+                <span style="color: #ffd93d">⏸️ 0</span>
+            </div>
+            <div class="year-signals">
+                <span class="signal-tag buy">Buy 57</span>
+                <span class="signal-tag sell">Sell 136</span>
+                <span class="signal-tag hold">Hold 172</span>
             </div>
             <div class="year-days">365 交易日</div>
         </a>
@@ -104,7 +119,7 @@
         
         <footer>
             <p>⚠️ 本分析仅供参考，不构成投资建议</p>
-            <p>生成时间: 2026-01-09 21:01:08</p>
+            <p>生成时间: 2026-01-12 14:01:00</p>
         </footer>
     </div>
 </body>
