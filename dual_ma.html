@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双均线策略分析 - MA20/MA60</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        header p { color: var(--text-secondary); margin-top: 10px; }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+        
+        .strategy-info {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.1));
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .strategy-info h3 { color: var(--accent-primary); margin-bottom: 10px; }
+        .strategy-info ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+        .strategy-info li { padding: 5px 0; color: var(--text-secondary); }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .summary-card .value { font-size: 2rem; font-weight: bold; }
+        .summary-card .value.buy { color: var(--accent-success); }
+        .summary-card .value.sell { color: var(--accent-danger); }
+        .summary-card .value.hold { color: var(--accent-warning); }
+        .summary-card .label { color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px; }
+        
+        .market-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .market-section > h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .market-section h2 .flag { font-size: 2rem; }
+        
+        .signal-section {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+        }
+        .signal-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .stock-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .stock-card .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .stock-card .name { font-weight: bold; font-size: 1.1rem; }
+        .stock-card .signal-badge { font-size: 0.85rem; }
+        .stock-card .price { font-size: 1.3rem; font-weight: bold; }
+        .stock-card .change { font-size: 0.9rem; }
+        .stock-card .positive { color: var(--accent-success); }
+        .stock-card .negative { color: var(--accent-danger); }
+        .stock-card .ma-line { font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; }
+        .stock-card .reason { font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; }
+        
+        footer { text-align: center; color: var(--text-secondary); padding: 30px; }
+        
+        @media (max-width: 768px) {
+            .stock-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="./" class="back-link">← 返回首页</a>
+        
+        <header>
+            <h1>📊 双均线策略分析（长线）</h1>
+            <p>MA20/MA60 长线趋势策略 | 更新时间: 2026-01-22 11:02:09</p>
+        </header>
+        
+        <!-- 策略说明 -->
+        <div class="strategy-info">
+            <h3>📖 策略规则</h3>
+            <ul>
+                <li>🟢 <strong>金叉买入:</strong> MA20 上穿 MA60</li>
+                <li>🔴 <strong>死叉卖出:</strong> MA20 下穿 MA60</li>
+                <li>📈 <strong>多头持有:</strong> 价格 > MA20 > MA60</li>
+                <li>📉 <strong>空头观望:</strong> 价格 < MA20 < MA60</li>
+            </ul>
+        </div>
+        
+        <!-- 汇总统计 -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="value buy">0</div>
+                <div class="label">🟢 金叉买入</div>
+            </div>
+            <div class="summary-card">
+                <div class="value sell">0</div>
+                <div class="label">🔴 死叉卖出</div>
+            </div>
+            <div class="summary-card">
+                <div class="value hold">27</div>
+                <div class="label">📈 多头持有</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" style="color: var(--text-secondary);">15</div>
+                <div class="label">📉 空头观望</div>
+            </div>
+        </div>
+        
+        <!-- 美股 -->
+        <div class="market-section">
+            <h2><span class="flag">🇺🇸</span> 美股 (17 只)</h2>
+            
+            
+            
+        <div class="signal-section" style="border-left: 4px solid var(--accent-primary);">
+            <h3>📈 多头持有 (8)</h3>
+            <div class="stock-grid">
+                
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">GOOGL</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$328.38</div>
+            <div class="change positive">+1.98%</div>
+            <div class="ma-line">MA20: 321.55 | MA60: 305.13</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">AMZN</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$231.31</div>
+            <div class="change positive">+0.13%</div>
+            <div class="ma-line">MA20: 236.1 | MA60: 233.53</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">TSLA</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$431.44</div>
+            <div class="change positive">+2.91%</div>
+            <div class="ma-line">MA20: 449.79 | MA60: 443.69</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">MU</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$389.11</div>
+            <div class="change positive">+6.61%</div>
+            <div class="ma-line">MA20: 322.49 | MA60: 264.03</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">RKLB</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$87.82</div>
+            <div class="change negative">-1.5%</div>
+            <div class="ma-line">MA20: 81.77 | MA60: 62.1</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">SanDisk</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$501.29</div>
+            <div class="change positive">+10.63%</div>
+            <div class="ma-line">MA20: 330.83 | MA60: 257.18</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">Intel</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$54.25</div>
+            <div class="change positive">+11.72%</div>
+            <div class="ma-line">MA20: 42.11 | MA60: 39.54</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">QQQ</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$616.28</div>
+            <div class="change positive">+1.35%</div>
+            <div class="ma-line">MA20: 620.49 | MA60: 617.09</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+            </div>
+        </div>
+        
+            
+        <div class="signal-section" style="border-left: 4px solid var(--text-secondary);">
+            <h3>📉 空头观望 (7)</h3>
+            <div class="stock-grid">
+                
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">AAPL</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$247.65</div>
+            <div class="change positive">+0.39%</div>
+            <div class="ma-line">MA20: 263.9 | MA60: 270.3</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">META</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$612.96</div>
+            <div class="change positive">+1.46%</div>
+            <div class="ma-line">MA20: 645.32 | MA60: 645.65</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">MSFT</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$444.11</div>
+            <div class="change negative">-2.29%</div>
+            <div class="ma-line">MA20: 474.66 | MA60: 488.93</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">NVDA</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$183.32</div>
+            <div class="change positive">+2.95%</div>
+            <div class="ma-line">MA20: 186.3 | MA60: 186.43</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">AVGO</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$328.8</div>
+            <div class="change negative">-1.14%</div>
+            <div class="ma-line">MA20: 344.85 | MA60: 358.14</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">COIN</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$226.93</div>
+            <div class="change negative">-0.35%</div>
+            <div class="ma-line">MA20: 240.96 | MA60: 270.23</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">BMNR</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$29.35</div>
+            <div class="change positive">+3.93%</div>
+            <div class="ma-line">MA20: 30.26 | MA60: 34.51</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+            </div>
+        </div>
+        
+            
+        <div class="signal-section" style="border-left: 4px solid var(--border-color);">
+            <h3>⏳ 等待信号 (2)</h3>
+            <div class="stock-grid">
+                
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">NBIS</span>
+                <span class="signal-badge">⏳ 等待信号</span>
+            </div>
+            <div class="price">$98.87</div>
+            <div class="change negative">-0.42%</div>
+            <div class="ma-line">MA20: 95.84 | MA60: 98.21</div>
+            <div class="reason">均线纠结，等待方向明确</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">AMD</span>
+                <span class="signal-badge">⏳ 等待信号</span>
+            </div>
+            <div class="price">$249.8</div>
+            <div class="change positive">+7.71%</div>
+            <div class="ma-line">MA20: 218.77 | MA60: 226.05</div>
+            <div class="reason">均线纠结，等待方向明确</div>
+        </div>
+        
+            </div>
+        </div>
+        
+        </div>
+        
+
+        <!-- A股 -->
+        <div class="market-section">
+            <h2><span class="flag">🇨🇳</span> A股 (27 只)</h2>
+            
+            
+            
+        <div class="signal-section" style="border-left: 4px solid var(--accent-primary);">
+            <h3>📈 多头持有 (19)</h3>
+            <div class="stock-grid">
+                
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">神火股份</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$31.15</div>
+            <div class="change negative">-1.17%</div>
+            <div class="ma-line">MA20: 29.21 | MA60: 26.78</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">三花智控</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$57.95</div>
+            <div class="change positive">+0.14%</div>
+            <div class="ma-line">MA20: 53.72 | MA60: 47.82</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">洛阳钼业</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$23.23</div>
+            <div class="change positive">+0.69%</div>
+            <div class="ma-line">MA20: 21.47 | MA60: 18.42</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">沪电股份</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$74.0</div>
+            <div class="change positive">+4.03%</div>
+            <div class="ma-line">MA20: 73.15 | MA60: 70.53</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">中金黄金</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$29.9</div>
+            <div class="change positive">+8.49%</div>
+            <div class="ma-line">MA20: 25.0 | MA60: 23.03</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">中际旭创</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$581.9</div>
+            <div class="change negative">-0.53%</div>
+            <div class="ma-line">MA20: 609.72 | MA60: 551.0</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">新易盛</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$394.8</div>
+            <div class="change positive">+3.2%</div>
+            <div class="ma-line">MA20: 416.77 | MA60: 383.17</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">信创ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$0.61</div>
+            <div class="change positive">+1.0%</div>
+            <div class="ma-line">MA20: 0.56 | MA60: 0.55</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">北方华创</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$509.69</div>
+            <div class="change negative">-0.88%</div>
+            <div class="ma-line">MA20: 490.47 | MA60: 448.51</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">中直股份</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$37.74</div>
+            <div class="change positive">+0.13%</div>
+            <div class="ma-line">MA20: 36.87 | MA60: 36.07</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">中国海油</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$30.56</div>
+            <div class="change positive">+3.1%</div>
+            <div class="ma-line">MA20: 29.15 | MA60: 28.62</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">香农芯创</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$62.4</div>
+            <div class="change positive">+0.78%</div>
+            <div class="ma-line">MA20: 63.05 | MA60: 62.79</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">通信ETF</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$3.06</div>
+            <div class="change negative">-3.14%</div>
+            <div class="ma-line">MA20: 3.13 | MA60: 2.88</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">机器人ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$1.12</div>
+            <div class="change positive">+1.73%</div>
+            <div class="ma-line">MA20: 1.04 | MA60: 1.0</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">科创ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$1.58</div>
+            <div class="change positive">+3.41%</div>
+            <div class="ma-line">MA20: 1.47 | MA60: 1.42</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">中韩半导体ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$3.09</div>
+            <div class="change negative">-2.89%</div>
+            <div class="ma-line">MA20: 2.83 | MA60: 2.63</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">创业板ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$1.14</div>
+            <div class="change positive">+0.18%</div>
+            <div class="ma-line">MA20: 1.14 | MA60: 1.11</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">金ETF</span>
+                <span class="signal-badge">📈 多头持有</span>
+            </div>
+            <div class="price">$10.85</div>
+            <div class="change positive">+2.94%</div>
+            <div class="ma-line">MA20: 10.14 | MA60: 9.65</div>
+            <div class="reason">多头排列，价格站上双均线</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">纳指科技ETF</span>
+                <span class="signal-badge">🟡 偏多持有</span>
+            </div>
+            <div class="price">$2.19</div>
+            <div class="change positive">+0.14%</div>
+            <div class="ma-line">MA20: 2.29 | MA60: 2.27</div>
+            <div class="reason">MA20 > MA60，但价格偏离均线</div>
+        </div>
+        
+            </div>
+        </div>
+        
+            
+        <div class="signal-section" style="border-left: 4px solid var(--text-secondary);">
+            <h3>📉 空头观望 (8)</h3>
+            <div class="stock-grid">
+                
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">招商银行</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$38.24</div>
+            <div class="change negative">-1.27%</div>
+            <div class="ma-line">MA20: 40.17 | MA60: 41.03</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">宁德时代</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$349.81</div>
+            <div class="change positive">+0.06%</div>
+            <div class="ma-line">MA20: 364.84 | MA60: 378.13</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">工业富联</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$61.56</div>
+            <div class="change positive">+3.17%</div>
+            <div class="ma-line">MA20: 62.23 | MA60: 64.07</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">阳光电源</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$162.08</div>
+            <div class="change negative">-0.57%</div>
+            <div class="ma-line">MA20: 169.49 | MA60: 177.24</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">东方财富</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$23.31</div>
+            <div class="change negative">-0.55%</div>
+            <div class="ma-line">MA20: 23.86 | MA60: 23.95</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">赛力斯</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$118.27</div>
+            <div class="change negative">-0.76%</div>
+            <div class="ma-line">MA20: 121.8 | MA60: 129.09</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">福耀玻璃</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$60.73</div>
+            <div class="change negative">-1.48%</div>
+            <div class="ma-line">MA20: 62.78 | MA60: 64.13</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+        <div class="stock-card">
+            <div class="stock-header">
+                <span class="name">纳指ETF</span>
+                <span class="signal-badge">📉 空头观望</span>
+            </div>
+            <div class="price">$2.28</div>
+            <div class="change negative">-0.91%</div>
+            <div class="ma-line">MA20: 2.33 | MA60: 2.37</div>
+            <div class="reason">空头排列，等待企稳</div>
+        </div>
+        
+            </div>
+        </div>
+        
+            
+        </div>
+        
+        <!-- 策略对比 -->
+        <div class="market-section comparison-section" style="border: 1px solid var(--accent-primary); background: linear-gradient(180deg, rgba(15, 15, 35, 0.95), rgba(22, 33, 62, 0.95));">
+            <h2 style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    📊 策略效能对比 <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: normal; margin-left: 10px;">(2021 - 2026 回测)</span>
+                </div>
+                <div style="font-size: 0.8rem; background: rgba(0, 212, 255, 0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--accent-primary); color: var(--accent-primary);">
+                    实时计算
+                </div>
+            </h2>
+            <p style="margin-bottom: 25px; color: var(--text-secondary); font-size: 0.95rem;">
+                对比 <strong style="color: #e056fd;">短线策略 (MA5/20)</strong> vs <strong style="color: var(--accent-primary);">长线策略 (MA20/60)</strong> vs <strong style="color: #ffd93d;">买入持有</strong> 的总收益率。
+            </p>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th width="15%">股票</th>
+                        <th width="20%">买入持有</th>
+                        <th width="20%">MA5/20 (短线)</th>
+                        <th width="20%">MA20/60 (长线)</th>
+                        <th width="25%">🏆 最佳策略</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td class="stock-name">
+                            <div style="font-size: 1.1rem; font-weight: bold;">QQQ</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+93.6%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+49.8%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+19.5%</div>
+                        </td>
+                        <td>
+                            <div class="badge-pill badge-hold">🛡️ 买入持有</div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="stock-name">
+                            <div style="font-size: 1.1rem; font-weight: bold;">NVDA</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+1246.5%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+399.4%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+522.8%</div>
+                        </td>
+                        <td>
+                            <div class="badge-pill badge-hold">🛡️ 买入持有</div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="stock-name">
+                            <div style="font-size: 1.1rem; font-weight: bold;">AAPL</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+78.0%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+68.0%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+82.5%</div>
+                        </td>
+                        <td>
+                            <div class="badge-pill badge-long">👑 长线策略</div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="stock-name">
+                            <div style="font-size: 1.1rem; font-weight: bold;">MSFT</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+101.6%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+17.7%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+9.5%</div>
+                        </td>
+                        <td>
+                            <div class="badge-pill badge-hold">🛡️ 买入持有</div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="stock-name">
+                            <div style="font-size: 1.1rem; font-weight: bold;">TSLA</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+46.9%</div>
+                        </td>
+                        <td class="positive">
+                            <div class="value-cell">+140.0%</div>
+                        </td>
+                        <td class="negative">
+                            <div class="value-cell">-1.0%</div>
+                        </td>
+                        <td>
+                            <div class="badge-pill badge-short">⚡ 短线策略</div>
+                        </td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+            
+            <div class="conclusion-box">
+                <h3 style="color: var(--accent-warning); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                     💡 策略选择建议
+                </h3>
+                <div class="insight-grid">
+                    <div class="insight-item">
+                        <div class="insight-title" style="color: var(--accent-primary);">📈 趋势牛股</div>
+                        <div class="insight-desc">如 <strong>NVDA, AAPL</strong></div>
+                        <div class="insight-rec">推荐 <strong>MA20/60 长线</strong>，吃完主升浪</div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title" style="color: #e056fd;">🌊 高波动股</div>
+                        <div class="insight-desc">如 <strong>TSLA</strong></div>
+                        <div class="insight-rec">推荐 <strong>MA5/20 短线</strong>，及时止盈止损</div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-title" style="color: #ffd93d;">📊 指数基金</div>
+                        <div class="insight-desc">如 <strong>QQQ</strong></div>
+                        <div class="insight-rec">推荐 <strong>买入持有</strong>，定投战胜波段</div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .comparison-table {
+                    width: 100%;
+                    border-collapse: separate;
+                    border-spacing: 0 8px;
+                    margin-bottom: 25px;
+                }
+                .comparison-table th {
+                    color: var(--text-secondary);
+                    font-weight: 500;
+                    padding: 0 15px 10px 15px;
+                    border: none;
+                    text-align: center;
+                }
+                .comparison-table th:first-child {
+                    text-align: left;
+                }
+                .comparison-table tr {
+                    background: rgba(255, 255, 255, 0.03);
+                    transition: all 0.2s ease;
+                }
+                .comparison-table tr:hover {
+                    transform: translateX(5px);
+                    background: rgba(255, 255, 255, 0.06);
+                }
+                .comparison-table td {
+                    padding: 15px;
+                    border: none;
+                    vertical-align: middle;
+                    text-align: center;
+                }
+                .comparison-table td:first-child {
+                    border-top-left-radius: 8px;
+                    border-bottom-left-radius: 8px;
+                    text-align: left;
+                }
+                .comparison-table td:last-child {
+                    border-top-right-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                }
+                
+                .value-cell {
+                    font-family: 'Consolas', monospace;
+                    font-weight: bold;
+                    font-size: 1.05rem;
+                    display: inline-block;
+                }
+                
+                .badge-pill {
+                    display: inline-block;
+                    padding: 6px 15px;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-weight: bold;
+                    min-width: 100px;
+                    text-align: center;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                }
+                .badge-long { background: linear-gradient(135deg, var(--accent-primary), #2980b9); color: white; }
+                .badge-short { background: linear-gradient(135deg, #e056fd, #8e44ad); color: white; }
+                .badge-hold { background: linear-gradient(135deg, #ffd93d, #f1c40f); color: black; }
+                
+                .conclusion-box {
+                    background: rgba(20, 30, 50, 0.6);
+                    border: 1px dashed var(--border-color);
+                    border-radius: 12px;
+                    padding: 25px;
+                }
+                
+                .insight-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 20px;
+                }
+                .insight-item {
+                    background: rgba(255,255,255,0.03);
+                    padding: 15px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.05);
+                }
+                .insight-title {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    font-size: 1.05rem;
+                }
+                .insight-desc {
+                    font-size: 1.2rem;
+                    margin-bottom: 8px;
+                    font-weight: bold;
+                }
+                .insight-rec {
+                    font-size: 0.85rem;
+                    color: var(--text-secondary);
+                }
+                
+                @media (max-width: 768px) {
+                    .comparison-table th:nth-child(2),
+                    .comparison-table td:nth-child(2) { display: none; }
+                    .insight-grid { grid-template-columns: 1fr; }
+                }
+            </style>
+        </div>
+        
+        <footer>
+            <p>数据来源: yfinance (已复权) | 策略: MA20/MA60 长线双均线 | 仅供参考</p>
+        </footer>
+    </div>
+</body>
+</html>
