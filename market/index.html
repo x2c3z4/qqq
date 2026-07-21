@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>A 股市场全景</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0c0e0f;
+            --surface: #151819;
+            --surface-raised: #1b1f20;
+            --border: #303638;
+            --text: #f0f2f2;
+            --muted: #9aa2a5;
+            --up: #f05a5a;
+            --down: #28a66f;
+            --flat: #899194;
+            --accent: #d7ad55;
+            --focus: #55a9b6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            line-height: 1.5;
+        }
+
+        button,
+        a {
+            font: inherit;
+        }
+
+        .page {
+            width: min(1320px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 24px 0 48px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 8px 0 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 14px;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        .back-link span {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        h1,
+        h2,
+        p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 680;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .as-of {
+            flex: 0 0 auto;
+            text-align: right;
+            padding-top: 34px;
+        }
+
+        .as-of time {
+            display: block;
+            font-size: 1rem;
+            font-weight: 650;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--focus);
+        }
+
+        .status.closed::before {
+            background: var(--accent);
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            padding: 22px 0 28px;
+        }
+
+        .metric {
+            min-width: 0;
+            min-height: 112px;
+            padding: 17px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .metric.primary {
+            background: var(--surface-raised);
+            border-color: #4a4f4e;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .metric-value {
+            display: block;
+            margin-top: 8px;
+            font-size: 1.9rem;
+            line-height: 1.15;
+            font-weight: 690;
+            white-space: nowrap;
+        }
+
+        .metric-value.up {
+            color: var(--up);
+        }
+
+        .metric-value.down {
+            color: var(--down);
+        }
+
+        .metric-meta {
+            display: block;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .trend-up {
+            color: var(--up);
+        }
+
+        .trend-down {
+            color: var(--down);
+        }
+
+        .trend-flat {
+            color: var(--muted);
+        }
+
+        .trend-accent {
+            color: var(--accent);
+        }
+
+        .signals {
+            padding: 0 0 30px;
+        }
+
+        .signal-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .signal {
+            min-width: 0;
+            padding: 14px 15px;
+            border-top: 2px solid var(--border);
+            background: var(--surface);
+        }
+
+        .signal-label,
+        .signal-meta {
+            display: block;
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+
+        .signal-value {
+            display: block;
+            margin: 7px 0 5px;
+            font-size: 1.15rem;
+            font-weight: 680;
+            white-space: nowrap;
+        }
+
+        .signal-state {
+            color: var(--text);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 14px;
+        }
+
+        h2 {
+            font-size: 1.05rem;
+            font-weight: 650;
+        }
+
+        .range-control {
+            display: inline-flex;
+            padding: 3px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+        }
+
+        .range-control button {
+            min-width: 54px;
+            height: 30px;
+            padding: 0 11px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .range-control button:hover {
+            color: var(--text);
+        }
+
+        .range-control button.active {
+            background: #343a3c;
+            color: var(--text);
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .chart-panel {
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+        }
+
+        .chart-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 13px;
+            font-size: 0.84rem;
+            font-weight: 600;
+        }
+
+        .legend-note {
+            color: var(--muted);
+            font-weight: 400;
+            font-size: 0.75rem;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 310px;
+        }
+
+        .table-panel {
+            border-top: 1px solid var(--border);
+            padding-top: 26px;
+        }
+
+        .table-meta {
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+            background: var(--surface);
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 550;
+            background: #121516;
+        }
+
+        td {
+            font-size: 0.84rem;
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        tbody tr:hover {
+            background: #1d2122;
+        }
+
+        .scope-note {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 1040px) {
+            .summary {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .metric.primary {
+                grid-column: span 2;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .signal-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .page {
+                width: min(100% - 24px, 1320px);
+                padding-top: 14px;
+            }
+
+            .topbar {
+                display: block;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .as-of {
+                padding-top: 18px;
+                text-align: left;
+            }
+
+            .summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                padding-top: 16px;
+            }
+
+            .metric.primary {
+                grid-column: span 2;
+            }
+
+            .metric {
+                min-height: 100px;
+                padding: 14px;
+            }
+
+            .metric-value {
+                font-size: 1.45rem;
+            }
+
+            .metric:last-child {
+                grid-column: span 2;
+            }
+
+            .signal-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .signal:last-child {
+                grid-column: span 2;
+            }
+
+            .section-header {
+                align-items: flex-end;
+            }
+
+            .range-control button {
+                min-width: 45px;
+                padding: 0 8px;
+            }
+
+            .chart-panel {
+                padding: 14px 10px;
+            }
+
+            .chart-wrap {
+                height: 270px;
+            }
+
+            .scope-note {
+                display: block;
+            }
+
+            .scope-note span {
+                display: block;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div>
+                <a class="back-link" href="../"><span aria-hidden="true">&#8592;</span> 返回总览</a>
+                <h1>A 股市场全景</h1>
+                <p class="subtitle">沪深京全市场涨跌家数与量能趋势</p>
+            </div>
+            <div class="as-of">
+                <time datetime="2026-07-20">2026.07.20</time>
+                <span class="status closed">收盘数据 · 更新于 16:36</span>
+            </div>
+        </header>
+
+        <section class="summary" aria-label="最新市场统计">
+            <article class="metric primary">
+                <span class="metric-label">市场宽度</span>
+                <strong class="metric-value trend-down">-35.7</strong>
+                <span class="metric-meta">上涨占比 31.5% · 中位涨幅 -2.1%</span>
+            </article>
+            <article class="metric">
+                <span class="metric-label">上涨</span>
+                <strong class="metric-value up">1,739</strong>
+                <span class="metric-meta">较前日 +1,257 家</span>
+            </article>
+            <article class="metric">
+                <span class="metric-label">下跌</span>
+                <strong class="metric-value down">3,710</strong>
+                <span class="metric-meta">较前日 -1,290 家</span>
+            </article>
+            <article class="metric">
+                <span class="metric-label">成交额</span>
+                <strong class="metric-value">2.72 万亿</strong>
+                <span class="metric-meta">较前日 +1.7%</span>
+            </article>
+            <article class="metric">
+                <span class="metric-label">成交股数</span>
+                <strong class="metric-value">1489.7 亿股</strong>
+                <span class="metric-meta">平盘 76 · 有效 5,525</span>
+            </article>
+        </section>
+
+        <section class="signals" aria-labelledby="signals-title">
+            <div class="section-header">
+                <h2 id="signals-title">决策信号</h2>
+            </div>
+            <div class="signal-grid">
+                <article class="signal">
+                    <span class="signal-label">趋势参与</span>
+                    <strong class="signal-value trend-down">25.1%</strong>
+                    <span class="signal-meta"><span class="signal-state">趋势收缩</span> · 1,384 只在 MA20 上</span>
+                </article>
+                <article class="signal">
+                    <span class="signal-label">涨停 / 跌停</span>
+                    <strong class="signal-value trend-down">59 / 352</strong>
+                    <span class="signal-meta"><span class="signal-state">风险偏好降温</span> · ±5%：271 / 1,511</span>
+                </article>
+                <article class="signal">
+                    <span class="signal-label">20 日新高 / 新低</span>
+                    <strong class="signal-value trend-down">367 / 2,705</strong>
+                    <span class="signal-meta"><span class="signal-state">下行趋势扩散</span></span>
+                </article>
+                <article class="signal">
+                    <span class="signal-label">量能对 5 日均值</span>
+                    <strong class="signal-value trend-down">+3.6%</strong>
+                    <span class="signal-meta"><span class="signal-state">量能平稳</span></span>
+                </article>
+                <article class="signal">
+                    <span class="signal-label">沪深 300 / 中位股</span>
+                    <strong class="signal-value trend-accent">+1.5% / -2.1%</strong>
+                    <span class="signal-meta"><span class="signal-state">权重强于多数股票</span> · 创业板 +0.4%</span>
+                </article>
+            </div>
+        </section>
+
+        <section aria-labelledby="trend-title">
+            <div class="section-header">
+                <h2 id="trend-title">每日趋势</h2>
+                <div class="range-control" role="group" aria-label="趋势区间">
+                    <button type="button" data-days="20" class="active">20 日</button>
+                    <button type="button" data-days="60">60 日</button>
+                    <button type="button" data-days="all">全部</button>
+                </div>
+            </div>
+            <div class="charts">
+                <div class="chart-panel">
+                    <div class="chart-title">
+                        <span>涨跌家数</span>
+                        <span class="legend-note">红涨 · 绿跌</span>
+                    </div>
+                    <div class="chart-wrap"><canvas id="breadthChart"></canvas></div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">
+                        <span>成交额</span>
+                        <span class="legend-note">柱：当日 · 线：5 日均值</span>
+                    </div>
+                    <div class="chart-wrap"><canvas id="turnoverChart"></canvas></div>
+                </div>
+            </div>
+            <div class="charts">
+                <div class="chart-panel">
+                    <div class="chart-title">
+                        <span>趋势参与</span>
+                        <span class="legend-note">MA20 上方占比 · 上涨占比</span>
+                    </div>
+                    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">
+                        <span>指数与中位股</span>
+                        <span class="legend-note">识别权重与多数股票背离</span>
+                    </div>
+                    <div class="chart-wrap"><canvas id="styleChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="table-panel" aria-labelledby="daily-title">
+            <div class="section-header">
+                <h2 id="daily-title">逐日明细</h2>
+                <span class="table-meta" id="recordCount"></span>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>交易日</th>
+                            <th>上涨</th>
+                            <th>下跌</th>
+                            <th>平盘</th>
+                            <th>上涨占比</th>
+                            <th>宽度</th>
+                            <th>平均涨幅</th>
+                            <th>中位涨幅</th>
+                            <th>涨停 / 跌停</th>
+                            <th>MA20 上方</th>
+                            <th>新高 / 新低</th>
+                            <th>沪深 300</th>
+                            <th>创业板</th>
+                            <th>成交额</th>
+                            <th>成交股数</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyRows"></tbody>
+                </table>
+            </div>
+            <div class="scope-note">
+                <span>统计范围：沪深京 A 股；MA20 和新高/新低按收盘价计算；涨跌停按板块/ST 规则识别，新股前 5 个交易日排除。</span>
+                <span>数据源：新浪财经沪深京A股实时行情；趋势指标由腾讯历史日K补充；趋势指标由腾讯历史日K补充 · 生成时间：2026-07-20 16:38:56</span>
+            </div>
+        </section>
+    </main>
+
+    <script id="marketData" type="application/json">[{"trade_date":"2026-07-01","up_count":4326,"down_count":1145,"flat_count":35,"active_count":5506,"total_count":5506,"total_volume":155408212064.0,"total_turnover":3682044685500.0,"average_change":2.1315094117242803,"median_change":2.110432257209305,"breadth_score":57.77333817653469,"strong_up_count":809,"strong_down_count":202,"limit_up_count":237,"limit_down_count":15,"above_ma20_count":1833,"above_ma20_ratio":33.34546116063307,"new_high_20_count":553,"new_low_20_count":162,"sh_change":0.4408460336068787,"sz_change":-0.5330886436506921,"csi300_change":-0.41068957691946517,"chinext_change":-1.8879915997153773,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-02","up_count":2213,"down_count":3161,"flat_count":136,"active_count":5510,"total_count":5512,"total_volume":152149683861.0,"total_turnover":3473318782400.0,"average_change":-0.7266437626726844,"median_change":-0.49059722088508617,"breadth_score":-17.20508166969147,"strong_up_count":264,"strong_down_count":548,"limit_up_count":155,"limit_down_count":49,"above_ma20_count":1840,"above_ma20_ratio":33.4484639156517,"new_high_20_count":277,"new_low_20_count":328,"sh_change":-2.031635642986529,"sz_change":-3.8485852559406064,"csi300_change":-2.9578663354157375,"chinext_change":-5.7138230158283125,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-03","up_count":3802,"down_count":1625,"flat_count":84,"active_count":5511,"total_count":5511,"total_volume":139585691937.0,"total_turnover":3204695466500.0,"average_change":1.1481222891666496,"median_change":1.2232415902140747,"breadth_score":39.502812556704775,"strong_up_count":576,"strong_down_count":311,"limit_up_count":160,"limit_down_count":34,"above_ma20_count":2219,"above_ma20_ratio":40.338120341756046,"new_high_20_count":442,"new_low_20_count":193,"sh_change":0.36585668544764083,"sz_change":0.6368230851271806,"csi300_change":0.6207011200465518,"chinext_change":0.06621412053458009,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-06","up_count":1876,"down_count":3537,"flat_count":99,"active_count":5512,"total_count":5512,"total_volume":136544091787.0,"total_turnover":3111787591200.0,"average_change":-1.2142399846612457,"median_change":-1.2691280616866252,"breadth_score":-30.134252539912914,"strong_up_count":268,"strong_down_count":712,"limit_up_count":93,"limit_down_count":84,"above_ma20_count":2069,"above_ma20_ratio":37.59767399600218,"new_high_20_count":447,"new_low_20_count":604,"sh_change":-0.059352464611095446,"sz_change":-1.1585823634669978,"csi300_change":-0.0035108226270508247,"chinext_change":-1.767941232807524,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-07","up_count":693,"down_count":4792,"flat_count":27,"active_count":5512,"total_count":5512,"total_volume":119897311885.0,"total_turnover":2598106462800.0,"average_change":-2.6348765055852494,"median_change":-2.9069767441860517,"breadth_score":-74.36502177068215,"strong_up_count":134,"strong_down_count":771,"limit_up_count":37,"limit_down_count":126,"above_ma20_count":1384,"above_ma20_ratio":25.15448927662668,"new_high_20_count":135,"new_low_20_count":1470,"sh_change":-1.2619888944977231,"sz_change":-1.2433838410046083,"csi300_change":-1.0272614622056975,"chinext_change":-0.9357130918796863,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-08","up_count":1589,"down_count":3788,"flat_count":135,"active_count":5512,"total_count":5513,"total_volume":115775795532.0,"total_turnover":2582224485800.0,"average_change":-1.498362894008612,"median_change":-1.3976141807477138,"breadth_score":-39.89477503628447,"strong_up_count":181,"strong_down_count":726,"limit_up_count":77,"limit_down_count":55,"above_ma20_count":1172,"above_ma20_ratio":21.301344965467102,"new_high_20_count":134,"new_low_20_count":1655,"sh_change":-0.4851838485905535,"sz_change":-1.874403534687108,"csi300_change":-0.7664442246455794,"chinext_change":-1.701470637105662,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-09","up_count":2483,"down_count":2886,"flat_count":145,"active_count":5514,"total_count":5515,"total_volume":127673053028.0,"total_turnover":2931835947400.0,"average_change":0.5385410363236488,"median_change":-0.1856760267915869,"breadth_score":-7.30866884294523,"strong_up_count":514,"strong_down_count":106,"limit_up_count":86,"limit_down_count":26,"above_ma20_count":1186,"above_ma20_ratio":21.551880792295112,"new_high_20_count":157,"new_low_20_count":1215,"sh_change":1.6547969215891634,"sz_change":3.072344680927963,"csi300_change":2.539780003490688,"chinext_change":4.494259300193737,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-10","up_count":3767,"down_count":1677,"flat_count":71,"active_count":5515,"total_count":5517,"total_volume":146504824430.0,"total_turnover":3410240783400.0,"average_change":0.8752398737893076,"median_change":1.2345679012345512,"breadth_score":37.896645512239346,"strong_up_count":427,"strong_down_count":384,"limit_up_count":104,"limit_down_count":13,"above_ma20_count":1511,"above_ma20_ratio":27.45775031800836,"new_high_20_count":171,"new_low_20_count":428,"sh_change":-1.0015879740077671,"sz_change":-2.286292441000004,"csi300_change":-1.9588582350178796,"chinext_change":-4.366166687820572,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-13","up_count":798,"down_count":4682,"flat_count":40,"active_count":5520,"total_count":5520,"total_volume":133187979567.0,"total_turnover":2834336258200.0,"average_change":-4.088985157862341,"median_change":-4.188800198030074,"breadth_score":-70.3623188405797,"strong_up_count":118,"strong_down_count":2242,"limit_up_count":35,"limit_down_count":246,"above_ma20_count":1027,"above_ma20_ratio":18.648992191755948,"new_high_20_count":161,"new_low_20_count":2588,"sh_change":-2.0612287796284434,"sz_change":-3.4813018428662246,"csi300_change":-1.7865248212115548,"chinext_change":-3.1022215976662437,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-14","up_count":4209,"down_count":1247,"flat_count":66,"active_count":5522,"total_count":5522,"total_volume":126134448569.0,"total_turnover":2718958277600.0,"average_change":1.5599630307374557,"median_change":1.5503875968992276,"breadth_score":53.63998551249547,"strong_up_count":527,"strong_down_count":168,"limit_up_count":96,"limit_down_count":39,"above_ma20_count":1427,"above_ma20_ratio":25.903067707387912,"new_high_20_count":295,"new_low_20_count":596,"sh_change":1.3628733273885363,"sz_change":2.76818943940067,"csi300_change":2.153606310884304,"chinext_change":3.4274020281883866,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-15","up_count":3350,"down_count":2097,"flat_count":76,"active_count":5523,"total_count":5523,"total_volume":127228601400.0,"total_turnover":2586835719900.0,"average_change":0.23873113933845733,"median_change":0.7692307692307665,"breadth_score":22.686945500633712,"strong_up_count":314,"strong_down_count":477,"limit_up_count":81,"limit_down_count":54,"above_ma20_count":1876,"above_ma20_ratio":34.047186932849364,"new_high_20_count":616,"new_low_20_count":880,"sh_change":-0.291142463191274,"sz_change":-0.9746818565253945,"csi300_change":-0.20264776399459006,"chinext_change":-1.2058767014442529,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-16","up_count":2497,"down_count":2860,"flat_count":164,"active_count":5521,"total_count":5522,"total_volume":120822039536.0,"total_turnover":2418212333900.0,"average_change":-0.6195999281017339,"median_change":-0.18298261665141702,"breadth_score":-6.5748958522006875,"strong_up_count":198,"strong_down_count":581,"limit_up_count":63,"limit_down_count":53,"above_ma20_count":2035,"above_ma20_ratio":36.94625998547567,"new_high_20_count":585,"new_low_20_count":1231,"sh_change":-1.8497919394880213,"sz_change":-1.9672652475743235,"csi300_change":-1.8457083885200398,"chinext_change":-2.950035482429625,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-17","up_count":482,"down_count":5000,"flat_count":39,"active_count":5521,"total_count":5521,"total_volume":142220123470.0,"total_turnover":2671019755000.0,"average_change":-4.5530401001215886,"median_change":-4.121863799283165,"breadth_score":-81.83300126788625,"strong_up_count":77,"strong_down_count":2236,"limit_up_count":37,"limit_down_count":287,"above_ma20_count":1350,"above_ma20_ratio":24.51425458507354,"new_high_20_count":139,"new_low_20_count":2478,"sh_change":-3.0457885694710196,"sz_change":-5.395740804008653,"csi300_change":-3.60396983673269,"chinext_change":-7.1451010979130425,"is_closed":1,"source":"腾讯证券个股历史日K","updated_at":"2026-07-20T16:36:58"},{"trade_date":"2026-07-20","up_count":1739,"down_count":3710,"flat_count":76,"active_count":5525,"total_count":5527,"total_volume":148973088423.0,"total_turnover":2717300687474.0,"average_change":-2.4460079638009047,"median_change":-2.102,"breadth_score":-35.67420814479638,"strong_up_count":271,"strong_down_count":1511,"limit_up_count":59,"limit_down_count":352,"above_ma20_count":1384,"above_ma20_ratio":25.122526774369213,"new_high_20_count":367,"new_low_20_count":2705,"sh_change":0.853311230128373,"sz_change":-0.7051203483214197,"csi300_change":1.5283389635909916,"chinext_change":0.42203445691135766,"is_closed":1,"source":"新浪财经沪深京A股实时行情；趋势指标由腾讯历史日K补充；趋势指标由腾讯历史日K补充","updated_at":"2026-07-20T16:36:58"}]</script>
+    <script>
+        const allData = JSON.parse(document.getElementById("marketData").textContent);
+        const css = getComputedStyle(document.documentElement);
+        const colors = {
+            up: css.getPropertyValue("--up").trim(),
+            down: css.getPropertyValue("--down").trim(),
+            flat: css.getPropertyValue("--flat").trim(),
+            accent: css.getPropertyValue("--accent").trim(),
+            focus: css.getPropertyValue("--focus").trim(),
+            muted: css.getPropertyValue("--muted").trim(),
+            border: css.getPropertyValue("--border").trim(),
+            text: css.getPropertyValue("--text").trim()
+        };
+        let breadthChart;
+        let turnoverChart;
+        let trendChart;
+        let styleChart;
+
+        Chart.defaults.color = colors.muted;
+        Chart.defaults.borderColor = colors.border;
+        Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+
+        function movingAverage(values, period) {
+            return values.map((value, index) => {
+                const start = Math.max(0, index - period + 1);
+                const windowValues = values.slice(start, index + 1);
+                return windowValues.reduce((sum, item) => sum + item, 0) / windowValues.length;
+            });
+        }
+
+        function formatDate(value) {
+            return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" })
+                .format(new Date(`${value}T00:00:00`));
+        }
+
+        function formatTurnover(value) {
+            if (value >= 1e12) return `${(value / 1e12).toFixed(2)} 万亿`;
+            return `${(value / 1e8).toFixed(0)} 亿`;
+        }
+
+        function formatVolume(value) {
+            return `${(value / 1e8).toFixed(1)} 亿股`;
+        }
+
+        function pctClass(value) {
+            if (value > 0) return "trend-up";
+            if (value < 0) return "trend-down";
+            return "trend-flat";
+        }
+
+        function tooltipTitle(items) {
+            const index = items[0].dataIndex;
+            return items[0].chart.$records[index].trade_date;
+        }
+
+        function renderCharts(records) {
+            const labels = records.map(item => formatDate(item.trade_date));
+            const turnover = records.map(item => item.total_turnover / 1e12);
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { usePointStyle: true, boxWidth: 7, padding: 18 }
+                    },
+                    tooltip: { callbacks: { title: tooltipTitle } }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true } },
+                    y: { beginAtZero: true, grid: { color: "rgba(137,145,148,0.14)" } }
+                }
+            };
+
+            if (breadthChart) breadthChart.destroy();
+            breadthChart = new Chart(document.getElementById("breadthChart"), {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        { label: "上涨", data: records.map(item => item.up_count), backgroundColor: colors.up, borderWidth: 0 },
+                        { label: "下跌", data: records.map(item => item.down_count), backgroundColor: colors.down, borderWidth: 0 },
+                        { label: "平盘", data: records.map(item => item.flat_count), backgroundColor: colors.flat, borderWidth: 0 }
+                    ]
+                },
+                options: { ...commonOptions, scales: { ...commonOptions.scales, x: { ...commonOptions.scales.x, stacked: true }, y: { ...commonOptions.scales.y, stacked: true } } }
+            });
+            breadthChart.$records = records;
+
+            if (turnoverChart) turnoverChart.destroy();
+            turnoverChart = new Chart(document.getElementById("turnoverChart"), {
+                data: {
+                    labels,
+                    datasets: [
+                        { type: "bar", label: "成交额", data: turnover, backgroundColor: "rgba(85,169,182,0.55)", borderWidth: 0 },
+                        { type: "line", label: "5 日均值", data: movingAverage(turnover, 5), borderColor: colors.accent, backgroundColor: colors.accent, borderWidth: 2, pointRadius: records.length < 3 ? 3 : 0, tension: 0.28 }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: { ...commonOptions.scales.y, ticks: { callback: value => `${value.toFixed(1)} 万亿` } }
+                    }
+                }
+            });
+            turnoverChart.$records = records;
+
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(document.getElementById("trendChart"), {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [
+                        { label: "MA20 上方", data: records.map(item => item.above_ma20_ratio), borderColor: colors.accent, backgroundColor: colors.accent, borderWidth: 2, pointRadius: 2, tension: 0.25 },
+                        { label: "上涨占比", data: records.map(item => item.active_count ? item.up_count / item.active_count * 100 : 0), borderColor: colors.focus, backgroundColor: colors.focus, borderWidth: 2, pointRadius: 2, tension: 0.25 }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: { min: 0, max: 100, grid: { color: "rgba(137,145,148,0.14)" }, ticks: { callback: value => `${value}%` } }
+                    }
+                }
+            });
+            trendChart.$records = records;
+
+            if (styleChart) styleChart.destroy();
+            styleChart = new Chart(document.getElementById("styleChart"), {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [
+                        { label: "沪深 300", data: records.map(item => item.csi300_change), borderColor: colors.accent, backgroundColor: colors.accent, borderWidth: 2, pointRadius: 2, tension: 0.2 },
+                        { label: "创业板", data: records.map(item => item.chinext_change), borderColor: colors.focus, backgroundColor: colors.focus, borderWidth: 2, pointRadius: 2, tension: 0.2 },
+                        { label: "中位股", data: records.map(item => item.median_change), borderColor: colors.flat, backgroundColor: colors.flat, borderWidth: 2, pointRadius: 2, tension: 0.2 }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        ...commonOptions.scales,
+                        y: { grid: { color: "rgba(137,145,148,0.14)" }, ticks: { callback: value => `${value}%` } }
+                    }
+                }
+            });
+            styleChart.$records = records;
+        }
+
+        function renderTable(records) {
+            const rows = [...records].reverse().map(item => {
+                const upRatio = item.active_count ? item.up_count / item.active_count * 100 : 0;
+                const status = item.is_closed ? "" : " <span class=\"trend-flat\">盘中</span>";
+                return `<tr>
+                    <td>${item.trade_date}${status}</td>
+                    <td class="trend-up">${item.up_count.toLocaleString("zh-CN")}</td>
+                    <td class="trend-down">${item.down_count.toLocaleString("zh-CN")}</td>
+                    <td>${item.flat_count.toLocaleString("zh-CN")}</td>
+                    <td>${upRatio.toFixed(1)}%</td>
+                    <td class="${pctClass(item.breadth_score)}">${item.breadth_score > 0 ? "+" : ""}${item.breadth_score.toFixed(1)}</td>
+                    <td class="${pctClass(item.average_change)}">${item.average_change > 0 ? "+" : ""}${item.average_change.toFixed(2)}%</td>
+                    <td class="${pctClass(item.median_change)}">${item.median_change > 0 ? "+" : ""}${item.median_change.toFixed(2)}%</td>
+                    <td><span class="trend-up">${item.limit_up_count}</span> / <span class="trend-down">${item.limit_down_count}</span></td>
+                    <td>${item.above_ma20_ratio.toFixed(1)}%</td>
+                    <td><span class="trend-up">${item.new_high_20_count}</span> / <span class="trend-down">${item.new_low_20_count}</span></td>
+                    <td class="${pctClass(item.csi300_change)}">${item.csi300_change > 0 ? "+" : ""}${item.csi300_change.toFixed(2)}%</td>
+                    <td class="${pctClass(item.chinext_change)}">${item.chinext_change > 0 ? "+" : ""}${item.chinext_change.toFixed(2)}%</td>
+                    <td>${formatTurnover(item.total_turnover)}</td>
+                    <td>${formatVolume(item.total_volume)}</td>
+                </tr>`;
+            }).join("");
+            document.getElementById("dailyRows").innerHTML = rows;
+            document.getElementById("recordCount").textContent = `${records.length} 个交易日`;
+        }
+
+        function renderRange(value) {
+            const records = value === "all" ? allData : allData.slice(-Number(value));
+            renderCharts(records);
+            renderTable(records);
+        }
+
+        document.querySelectorAll(".range-control button").forEach(button => {
+            button.addEventListener("click", () => {
+                document.querySelectorAll(".range-control button").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                renderRange(button.dataset.days);
+            });
+        });
+
+        renderRange("20");
+    </script>
+</body>
+</html>
