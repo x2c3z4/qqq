@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOF 套利分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7b2cbf;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --accent-fire: #ff4500;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 16px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--accent-fire), var(--accent-warning));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .summary-card .label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .summary-card.hot .value {
+            background: linear-gradient(135deg, var(--accent-fire), var(--accent-warning));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Top Opportunity Banner */
+        .top-opportunity {
+            background: linear-gradient(135deg, rgba(255, 69, 0, 0.15), rgba(255, 217, 61, 0.1));
+            border: 2px solid var(--accent-fire);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .top-opportunity .info h2 {
+            font-size: 1.3rem;
+            color: var(--accent-fire);
+            margin-bottom: 5px;
+        }
+
+        .top-opportunity .fund-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .top-opportunity .fund-code {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .top-opportunity .metrics {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .top-opportunity .metric {
+            text-align: center;
+        }
+
+        .top-opportunity .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .top-opportunity .metric-value.premium {
+            color: var(--accent-fire);
+        }
+
+        .top-opportunity .metric-value.profit {
+            color: var(--accent-success);
+        }
+
+        .top-opportunity .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .card-header .icon {
+            font-size: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Opportunity Table */
+        .opportunity-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .opportunity-table th,
+        .opportunity-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .opportunity-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .opportunity-table tr:hover {
+            background: rgba(255, 69, 0, 0.05);
+        }
+
+        .opportunity-table .rank {
+            font-weight: bold;
+        }
+
+        .opportunity-table .rank-1 { color: #ffd700; }
+        .opportunity-table .rank-2 { color: #c0c0c0; }
+        .opportunity-table .rank-3 { color: #cd7f32; }
+
+        .opportunity-table .fund-name {
+            font-weight: 600;
+        }
+
+        .opportunity-table .premium {
+            font-weight: bold;
+            color: var(--accent-fire);
+        }
+
+        .opportunity-table .profit {
+            color: var(--accent-success);
+        }
+
+        .opportunity-table .negative {
+            color: var(--accent-danger);
+        }
+
+        /* Signal Badges */
+        .signal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .signal-badge.strong-buy {
+            background: linear-gradient(135deg, var(--accent-fire), var(--accent-warning));
+            color: #000;
+        }
+
+        .signal-badge.buy {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-success);
+            border: 1px solid var(--accent-success);
+        }
+
+        .signal-badge.watch {
+            background: rgba(255, 217, 61, 0.2);
+            color: var(--accent-warning);
+            border: 1px solid var(--accent-warning);
+        }
+
+        /* Indicator Pills */
+        .indicator-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pill {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .pill.fire {
+            background: rgba(255, 69, 0, 0.15);
+            border-color: var(--accent-fire);
+            color: var(--accent-fire);
+        }
+
+        .pill.success {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: var(--accent-success);
+        }
+
+        .pill.warning {
+            background: rgba(255, 217, 61, 0.1);
+            border-color: rgba(255, 217, 61, 0.3);
+            color: var(--accent-warning);
+        }
+
+        /* Risk Warning */
+        .risk-warning {
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 4px solid var(--accent-danger);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+        }
+
+        .risk-warning h4 {
+            color: var(--accent-danger);
+            margin-bottom: 10px;
+        }
+
+        .risk-warning ul {
+            color: var(--text-secondary);
+            padding-left: 20px;
+        }
+
+        .risk-warning li {
+            margin-bottom: 8px;
+        }
+
+        /* Calculator */
+        .calculator {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid var(--accent-primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .calculator h4 {
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .calc-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding-top: 15px;
+        }
+
+        .calc-row .label {
+            color: var(--text-secondary);
+        }
+
+        .calc-row .value {
+            color: var(--text-primary);
+        }
+
+        .calc-row .value.positive {
+            color: var(--accent-success);
+        }
+
+        .calc-row .value.negative {
+            color: var(--accent-danger);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .top-opportunity {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" style="display: inline-block; margin-bottom: 15px; color: #00d4ff; text-decoration: none;">← 返回首页</a>
+        <header>
+            <h1>🚜 LOF 拖拉机套利分析</h1>
+            <p id="update-time">数据更新时间: 加载中...</p>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card hot">
+                <div class="value" id="total-opportunities">--</div>
+                <div class="label">套利机会</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="max-premium">--</div>
+                <div class="label">最高溢价率</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="avg-profit">--</div>
+                <div class="label">平均净利润率</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="total-profit">--</div>
+                <div class="label">拖拉机预期收益</div>
+            </div>
+        </div>
+
+        <!-- Top Opportunity -->
+        <div class="top-opportunity" id="top-opportunity">
+            <div class="info">
+                <h2>🔥 最佳套利机会</h2>
+                <div class="fund-name" id="top-name">--</div>
+                <div class="fund-code" id="top-code">--</div>
+                <div class="indicator-pills" id="top-indicators"></div>
+            </div>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value premium" id="top-premium">--%</div>
+                    <div class="metric-label">溢价率</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value profit" id="top-profit">--</div>
+                    <div class="metric-label">净利润率</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value profit" id="top-total">¥--</div>
+                    <div class="metric-label">拖拉机收益</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid">
+            <!-- Premium Rate Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>溢价率排行</h3>
+                    <span class="icon">📊</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="premiumChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Profit Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>预期收益分布</h3>
+                    <span class="icon">💰</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opportunity Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>套利机会详情</h3>
+                <span class="icon">🎯</span>
+            </div>
+            <table class="opportunity-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>基金名称</th>
+                        <th>代码</th>
+                        <th>场内价格</th>
+                        <th>净值</th>
+                        <th>溢价率</th>
+                        <th>限额</th>
+                        <th>单账户收益</th>
+                        <th>拖拉机收益</th>
+                        <th>信号</th>
+                    </tr>
+                </thead>
+                <tbody id="opportunity-tbody">
+                    <tr><td colspan="10" style="text-align: center; color: var(--text-secondary);">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Calculator & Risk Warning -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>收益计算器</h3>
+                    <span class="icon">🧮</span>
+                </div>
+                <div class="calculator" id="calculator">
+                    <h4>最佳机会收益详情</h4>
+                    <div class="calc-row">
+                        <span class="label">申购金额 (每账户)</span>
+                        <span class="value" id="calc-amount">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">毛利润</span>
+                        <span class="value" id="calc-gross">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">申购费 (0.1%)</span>
+                        <span class="value negative" id="calc-sub-fee">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">卖出佣金 (0.03%)</span>
+                        <span class="value negative" id="calc-sell-fee">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">单账户净利润</span>
+                        <span class="value positive" id="calc-net">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">拖拉机总收益 (6账户)</span>
+                        <span class="value positive" id="calc-total">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>套利配置</h3>
+                    <span class="icon">⚙️</span>
+                </div>
+                <div class="calculator">
+                    <h4>当前参数设置</h4>
+                    <div class="calc-row">
+                        <span class="label">最低溢价门槛</span>
+                        <span class="value" id="config-min-premium">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">申购费率</span>
+                        <span class="value" id="config-sub-fee">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">卖出佣金</span>
+                        <span class="value" id="config-sell-fee">--</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="label">拖拉机账户数</span>
+                        <span class="value" id="config-accounts">--</span>
+                    </div>
+                </div>
+                
+                <div class="risk-warning">
+                    <h4>⚠️ 风险提示</h4>
+                    <ul>
+                        <li>T+2/T+3 期间价格可能波动，溢价可能消失甚至转为折价</li>
+                        <li>流动性不足可能导致卖出困难或价格不理想</li>
+                        <li>基金公司可能随时调整申购限额</li>
+                        <li>大量套利资金涌入可能快速拉低溢价率</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Records -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <h3>📅 历史记录</h3>
+                <span class="icon">🕐</span>
+            </div>
+            <div class="history-links" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0;">
+                <a href="lof_20260810.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-10 周一</a>
+<a href="lof_20260806.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-06 周四</a>
+<a href="lof_20260805.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-05 周三</a>
+<a href="lof_20260803.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-03 周一</a>
+<a href="lof_20260730.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-30 周四</a>
+<a href="lof_20260721.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-21 周二</a>
+<a href="lof_20260710.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-10 周五</a>
+<a href="lof_20260709.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-09 周四</a>
+<a href="lof_20260619.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-19 周五</a>
+<a href="lof_20260618.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-18 周四</a>
+<a href="lof_20260617.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-17 周三</a>
+<a href="lof_20260615.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-15 周一</a>
+<a href="lof_20260612.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-12 周五</a>
+<a href="lof_20260611.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-11 周四</a>
+<a href="lof_20260610.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-10 周三</a>
+<a href="lof_20260609.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-09 周二</a>
+<a href="lof_20260608.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-08 周一</a>
+<a href="lof_20260527.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-27 周三</a>
+<a href="lof_20260526.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-26 周二</a>
+<a href="lof_20260525.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-25 周一</a>
+<a href="lof_20260522.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-22 周五</a>
+<a href="lof_20260521.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-21 周四</a>
+<a href="lof_20260520.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-20 周三</a>
+<a href="lof_20260519.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-19 周二</a>
+<a href="lof_20260515.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-15 周五</a>
+<a href="lof_20260514.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-14 周四</a>
+<a href="lof_20260513.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-13 周三</a>
+<a href="lof_20260512.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-12 周二</a>
+<a href="lof_20260511.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-11 周一</a>
+<a href="lof_20260507.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-07 周四</a>
+<a href="lof_20260506.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-06 周三</a>
+<a href="lof_20260414.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-14 周二</a>
+<a href="lof_20260408.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-08 周三</a>
+<a href="lof_20260129.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-29 周四</a>
+<a href="lof_20260127.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-27 周二</a>
+<a href="lof_20260126.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-26 周一</a>
+<a href="lof_20260123.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-23 周五</a>
+<a href="lof_20260122.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-22 周四</a>
+<a href="lof_20260121.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-21 周三</a>
+<a href="lof_20260120.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-20 周二</a>
+<a href="lof_20260119.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-19 周一</a>
+<a href="lof_20260116.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-16 周五</a>
+<a href="lof_20260115.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-15 周四</a>
+<a href="lof_20260114.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-14 周三</a>
+<a href="lof_20260113.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-13 周二</a>
+<a href="lof_20260112.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-12 周一</a>
+<a href="lof_20260110.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-10 周六</a>
+<a href="lof_20260109.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-09 周五</a>
+<a href="lof_20260108.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-08 周四</a>
+<a href="lof_20260107.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-07 周三</a>
+<a href="lof_20260106.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-06 周二</a>
+<a href="lof_20260105.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-05 周一</a>
+<a href="lof_20260102.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-02 周五</a>
+<a href="lof_20260101.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-01 周四</a>
+<a href="lof_20251231.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2025-12-31 周三</a>
+<a href="lof_20251230.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2025-12-30 周二</a>
+<a href="lof_20251229.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2025-12-29 周一</a>
+<a href="lof_20251226.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2025-12-26 周五</a>
+<a href="lof_20251225.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,149,0,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2025-12-25 周四</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>LOF 拖拉机套利分析报表 | 数据来源: 东方财富 | 仅供参考，投资有风险</p>
+    </footer>
+
+    <script>
+        // Arbitrage data (will be populated by Python)
+        const arbitrageData = [{"code": "161907", "name": "红利联接", "price": 1.647, "nav": 1.5423, "premium_rate": 6.788562536471504, "change_pct": 0.0, "volume": 266933.0, "turnover": 434549.0, "limit_amount": 1000000.0, "purchase_status": "限大额", "exchange": "深市", "exchange_code": "SZ", "arbitrage_friendly": true, "exchange_note": "转托管便利，推荐套利", "nav_type": "official", "subscription_amount": 100000, "gross_profit": 6788.562536471505, "subscription_fee": 100.0, "sell_commission": 32.03656876094145, "transfer_fee": 0.0, "total_cost": 132.03656876094146, "net_profit": 6656.525967710564, "net_profit_rate": 6.6565259677105635, "accounts": 6, "total_profit": 39939.155806263385, "signal": "BUY", "signal_reason": "溢价 6.79%，有套利空间", "has_limit": true, "rank": 1}];
+        const configData = {"MIN_PREMIUM": 3.0, "SUBSCRIPTION_FEE": 0.1, "SELL_COMMISSION": 0.03, "TRANSFER_FEE": 0.0, "ACCOUNTS": 6, "SETTLEMENT_DAYS": {"A股LOF": 2, "QDII-LOF": 3}, "PREFER_SZ": true};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (arbitrageData && arbitrageData.length > 0) {
+                updateDashboard(arbitrageData);
+            } else {
+                document.getElementById('opportunity-tbody').innerHTML = 
+                    '<tr><td colspan="10" style="text-align: center; color: var(--text-secondary);">暂无套利机会</td></tr>';
+            }
+        });
+
+        function updateDashboard(data) {
+            // Update time
+            document.getElementById('update-time').textContent = 
+                '数据更新时间: ' + new Date().toLocaleString('zh-CN');
+
+            // Summary cards
+            document.getElementById('total-opportunities').textContent = data.length;
+            document.getElementById('max-premium').textContent = data[0].premium_rate.toFixed(2) + '%';
+            
+            const avgProfit = data.reduce((sum, d) => sum + d.net_profit_rate, 0) / data.length;
+            document.getElementById('avg-profit').textContent = avgProfit.toFixed(2) + '%';
+            
+            document.getElementById('total-profit').textContent = '¥' + data[0].total_profit.toFixed(2);
+
+            // Top opportunity
+            const top = data[0];
+            document.getElementById('top-name').textContent = top.name;
+            document.getElementById('top-code').textContent = top.code;
+            document.getElementById('top-premium').textContent = top.premium_rate.toFixed(2) + '%';
+            document.getElementById('top-profit').textContent = top.net_profit_rate.toFixed(2) + '%';
+            document.getElementById('top-total').textContent = '¥' + top.total_profit.toFixed(2);
+
+            // Top indicators
+            const indicators = document.getElementById('top-indicators');
+            indicators.innerHTML = '';
+            
+            let signalClass = top.signal === 'STRONG_BUY' ? 'fire' : (top.signal === 'BUY' ? 'success' : 'warning');
+            indicators.innerHTML += `<span class="pill ${signalClass}">${top.signal_reason}</span>`;
+            
+            // 限额标签：有限额绿色，无限额红色警告
+            let limitPillClass = top.has_limit ? 'success' : 'danger';
+            let limitIcon = top.has_limit ? '✓' : '⚠️';
+            indicators.innerHTML += `<span class="pill ${limitPillClass}">${limitIcon} 限额: ${formatLimit(top.limit_amount)}</span>`;
+            indicators.innerHTML += `<span class="pill">成交额: ¥${(top.turnover/10000).toFixed(0)}万</span>`;
+
+            // Calculator
+            document.getElementById('calc-amount').textContent = '¥' + top.subscription_amount.toFixed(2);
+            document.getElementById('calc-gross').textContent = '¥' + top.gross_profit.toFixed(2);
+            document.getElementById('calc-sub-fee').textContent = '-¥' + top.subscription_fee.toFixed(2);
+            document.getElementById('calc-sell-fee').textContent = '-¥' + top.sell_commission.toFixed(2);
+            document.getElementById('calc-net').textContent = '¥' + top.net_profit.toFixed(2);
+            document.getElementById('calc-total').textContent = '¥' + top.total_profit.toFixed(2);
+
+            // Config
+            if (configData) {
+                document.getElementById('config-min-premium').textContent = configData.MIN_PREMIUM + '%';
+                document.getElementById('config-sub-fee').textContent = configData.SUBSCRIPTION_FEE + '%';
+                document.getElementById('config-sell-fee').textContent = configData.SELL_COMMISSION + '%';
+                document.getElementById('config-accounts').textContent = configData.ACCOUNTS + ' 个';
+            }
+
+            // Charts
+            renderPremiumChart(data);
+            renderProfitChart(data);
+
+            // Table
+            renderOpportunityTable(data);
+        }
+
+        function renderPremiumChart(data) {
+            const ctx = document.getElementById('premiumChart').getContext('2d');
+            const topData = data.slice(0, 10);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topData.map(d => d.name.substring(0, 8)),
+                    datasets: [{
+                        label: '溢价率 (%)',
+                        data: topData.map(d => d.premium_rate),
+                        backgroundColor: topData.map((d, i) => 
+                            i === 0 ? 'rgba(255, 69, 0, 0.8)' : 
+                            d.premium_rate >= 5 ? 'rgba(255, 136, 0, 0.6)' : 'rgba(255, 217, 61, 0.5)'
+                        ),
+                        borderColor: 'rgba(255, 69, 0, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { 
+                                color: '#a0a0b0',
+                                callback: value => value + '%'
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderProfitChart(data) {
+            const ctx = document.getElementById('profitChart').getContext('2d');
+            const topData = data.slice(0, 10);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topData.map(d => d.name.substring(0, 8)),
+                    datasets: [{
+                        label: '拖拉机收益 (元)',
+                        data: topData.map(d => d.total_profit),
+                        backgroundColor: 'rgba(0, 255, 136, 0.6)',
+                        borderColor: 'rgba(0, 255, 136, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { 
+                                color: '#a0a0b0',
+                                callback: value => '¥' + value
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderOpportunityTable(data) {
+            const tbody = document.getElementById('opportunity-tbody');
+            tbody.innerHTML = data.map((d, i) => {
+                const rankClass = i < 3 ? `rank-${i + 1}` : '';
+                
+                let signalHtml = '';
+                if (d.signal === 'STRONG_BUY') {
+                    signalHtml = '<span class="signal-badge strong-buy">🔥 强烈</span>';
+                } else if (d.signal === 'BUY') {
+                    signalHtml = '<span class="signal-badge buy">✅ 买入</span>';
+                } else {
+                    signalHtml = '<span class="signal-badge watch">👀 关注</span>';
+                }
+                
+                // 限额显示：有限额用绿色，无限额用红色警告
+                let limitHtml = '';
+                if (d.has_limit === false || d.limit_amount >= 100000000) {
+                    limitHtml = `<span style="color: var(--accent-danger);">⚠️ ${formatLimit(d.limit_amount)}</span>`;
+                } else {
+                    limitHtml = `<span style="color: var(--accent-success);">✓ ${formatLimit(d.limit_amount)}</span>`;
+                }
+                
+                return `
+                    <tr>
+                        <td class="rank ${rankClass}">#${d.rank}</td>
+                        <td class="fund-name">${d.name}</td>
+                        <td>${d.code}</td>
+                        <td>¥${d.price.toFixed(3)}</td>
+                        <td>¥${d.nav.toFixed(4)}</td>
+                        <td class="premium">${d.premium_rate.toFixed(2)}%</td>
+                        <td>${limitHtml}</td>
+                        <td>¥${d.net_profit.toFixed(2)}</td>
+                        <td class="profit">¥${d.total_profit.toFixed(2)}</td>
+                        <td>${signalHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function formatLimit(amount) {
+            if (amount >= 100000000) {
+                return '无限额';
+            } else if (amount >= 10000) {
+                return (amount / 10000).toFixed(0) + '万';
+            } else {
+                return amount.toFixed(0) + '元';
+            }
+        }
+    </script>
+</body>
+</html>
