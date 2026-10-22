@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A股分析仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7b2cbf;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd93d;
+            --accent-danger: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 16px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Recommendation Banner */
+        .recommendation-banner {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .recommendation-info h2 {
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .recommendation-info .stock-symbol {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .recommendation-score {
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .grid-full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .card-header .icon {
+            font-size: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Ranking Table */
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ranking-table th,
+        .ranking-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .ranking-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ranking-table tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .ranking-table .rank {
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+
+        .ranking-table .rank-1 { color: #ffd700; }
+        .ranking-table .rank-2 { color: #c0c0c0; }
+        .ranking-table .rank-3 { color: #cd7f32; }
+
+        .ranking-table .symbol {
+            font-weight: 600;
+        }
+
+        .ranking-table .score {
+            font-weight: bold;
+        }
+
+        .ranking-table .positive { color: var(--accent-success); }
+        .ranking-table .negative { color: var(--accent-danger); }
+
+        /* Indicator Pills */
+        .indicator-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pill {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .pill.success {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: var(--accent-success);
+        }
+
+        .pill.warning {
+            background: rgba(255, 217, 61, 0.1);
+            border-color: rgba(255, 217, 61, 0.3);
+            color: var(--accent-warning);
+        }
+
+        .pill.danger {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.3);
+            color: var(--accent-danger);
+        }
+
+        /* Reason Box */
+        .reason-box {
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 4px solid var(--accent-primary);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .reason-box h4 {
+            color: var(--accent-primary);
+            margin-bottom: 15px;
+        }
+
+        .reason-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        .reason-item .emoji {
+            font-size: 1.3rem;
+            margin-right: 12px;
+        }
+
+        .reason-item .text {
+            color: var(--text-secondary);
+        }
+
+        .reason-item .text strong {
+            color: var(--text-primary);
+        }
+
+        /* Signal List */
+        .signal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .signal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .signal-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(5px);
+        }
+
+        .signal-item.buy {
+            border-left: 3px solid var(--accent-success);
+        }
+
+        .signal-item.sell {
+            border-left: 3px solid var(--accent-danger);
+        }
+
+        .signal-item .symbol {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .signal-item .score {
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .signal-item.buy .score {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-success);
+        }
+
+        .signal-item.sell .score {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--accent-danger);
+        }
+
+        .signal-item .reason {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .no-signal {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .recommendation-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" style="display: inline-block; margin-bottom: 15px; color: #00d4ff; text-decoration: none;">← 返回首页</a>
+        <header>
+            <h1>📊 A股分析仪表盘</h1>
+            <p id="update-time">数据更新时间: 加载中...</p>
+        </header>
+
+        <!-- Recommendation Banner -->
+        <div class="recommendation-banner" id="recommendation-banner">
+            <div class="recommendation-info">
+                <h2>🎯 今日推荐</h2>
+                <div class="stock-symbol" id="top-symbol">--</div>
+                <div class="indicator-pills" id="top-indicators"></div>
+            </div>
+            <div class="recommendation-score">
+                <div class="score-value" id="top-score">--</div>
+                <div class="score-label">综合得分</div>
+            </div>
+        </div>
+
+        <!-- Portfolio Recommendation -->
+        <div class="card" id="portfolio-card" style="display: none; margin-bottom: 30px; border-left: 4px solid var(--accent-primary);">
+            <div class="card-header">
+                <h3>💼 推荐持仓组合</h3>
+                <span class="icon">🥧</span>
+            </div>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 0;">
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div style="width: 100%; max-width: 300px; height: 300px; position: relative;">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+                <div id="portfolio-list" style="display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Signals Summary -->
+        <div class="grid" style="margin-bottom: 30px;">
+            <div class="card" style="border-left: 4px solid var(--accent-success);">
+                <div class="card-header">
+                    <h3>⚡️ 今日买入信号</h3>
+                    <span class="icon">📈</span>
+                </div>
+                <div id="buy-candidates" class="signal-list">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+            <div class="card" style="border-left: 4px solid var(--accent-danger);">
+                <div class="card-header">
+                    <h3>⚠️ 今日卖出信号</h3>
+                    <span class="icon">📉</span>
+                </div>
+                <div id="sell-candidates" class="signal-list">
+                    <div class="loading">加载中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid">
+            <!-- Score Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>综合得分对比</h3>
+                    <span class="icon">📊</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Score Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>推荐股票得分构成</h3>
+                    <span class="icon">🎯</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="breakdownChart"></canvas>
+                </div>
+            </div>
+
+            <!-- RSI Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>RSI 指标对比</h3>
+                    <span class="icon">📈</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Momentum Comparison -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>10日动量对比</h3>
+                    <span class="icon">🚀</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="momentumChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>股票排名详情</h3>
+                <span class="icon">🏆</span>
+            </div>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>股票</th>
+                        <th>价格</th>
+                        <th>涨跌幅</th>
+                        <th>RSI</th>
+                        <th>MACD</th>
+                        <th>趋势</th>
+                        <th>动量</th>
+                        <th>量比</th>
+                        <th>得分</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-tbody">
+                    <tr><td colspan="10" class="loading">加载中</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recommendation Reason -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <h3>推荐理由详解</h3>
+                <span class="icon">💡</span>
+            </div>
+            <div class="reason-box" id="reason-box">
+                <h4 id="reason-title">加载中...</h4>
+                <div id="reason-content"></div>
+            </div>
+        </div>
+
+        <!-- History Records -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+                <h3>📅 历史记录</h3>
+                <span class="icon">🕐</span>
+            </div>
+            <div class="history-links" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0;">
+                <a href="dashboard_20261021.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-21 周三</a>
+<a href="dashboard_20261020.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-20 周二</a>
+<a href="dashboard_20261019.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-19 周一</a>
+<a href="dashboard_20261016.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-16 周五</a>
+<a href="dashboard_20261015.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-15 周四</a>
+<a href="dashboard_20261014.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-14 周三</a>
+<a href="dashboard_20261013.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-13 周二</a>
+<a href="dashboard_20261012.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-12 周一</a>
+<a href="dashboard_20261009.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-09 周五</a>
+<a href="dashboard_20261008.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-08 周四</a>
+<a href="dashboard_20261007.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-07 周三</a>
+<a href="dashboard_20261006.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-06 周二</a>
+<a href="dashboard_20261005.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-05 周一</a>
+<a href="dashboard_20261002.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-02 周五</a>
+<a href="dashboard_20261001.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-10-01 周四</a>
+<a href="dashboard_20260930.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-30 周三</a>
+<a href="dashboard_20260929.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-29 周二</a>
+<a href="dashboard_20260928.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-28 周一</a>
+<a href="dashboard_20260925.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-25 周五</a>
+<a href="dashboard_20260924.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-24 周四</a>
+<a href="dashboard_20260923.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-23 周三</a>
+<a href="dashboard_20260922.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-22 周二</a>
+<a href="dashboard_20260921.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-21 周一</a>
+<a href="dashboard_20260918.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-18 周五</a>
+<a href="dashboard_20260917.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-17 周四</a>
+<a href="dashboard_20260916.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-16 周三</a>
+<a href="dashboard_20260915.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-15 周二</a>
+<a href="dashboard_20260914.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-14 周一</a>
+<a href="dashboard_20260911.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-11 周五</a>
+<a href="dashboard_20260910.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-10 周四</a>
+<a href="dashboard_20260909.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-09 周三</a>
+<a href="dashboard_20260908.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-08 周二</a>
+<a href="dashboard_20260907.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-07 周一</a>
+<a href="dashboard_20260904.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-04 周五</a>
+<a href="dashboard_20260903.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-03 周四</a>
+<a href="dashboard_20260902.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-02 周三</a>
+<a href="dashboard_20260901.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-09-01 周二</a>
+<a href="dashboard_20260831.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-31 周一</a>
+<a href="dashboard_20260828.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-28 周五</a>
+<a href="dashboard_20260827.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-27 周四</a>
+<a href="dashboard_20260826.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-26 周三</a>
+<a href="dashboard_20260825.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-25 周二</a>
+<a href="dashboard_20260824.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-24 周一</a>
+<a href="dashboard_20260821.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-21 周五</a>
+<a href="dashboard_20260820.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-20 周四</a>
+<a href="dashboard_20260819.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-19 周三</a>
+<a href="dashboard_20260818.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-18 周二</a>
+<a href="dashboard_20260817.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-17 周一</a>
+<a href="dashboard_20260814.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-14 周五</a>
+<a href="dashboard_20260813.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-13 周四</a>
+<a href="dashboard_20260812.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-12 周三</a>
+<a href="dashboard_20260811.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-11 周二</a>
+<a href="dashboard_20260810.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-10 周一</a>
+<a href="dashboard_20260807.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-07 周五</a>
+<a href="dashboard_20260806.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-06 周四</a>
+<a href="dashboard_20260805.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-05 周三</a>
+<a href="dashboard_20260804.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-04 周二</a>
+<a href="dashboard_20260803.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-08-03 周一</a>
+<a href="dashboard_20260731.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-31 周五</a>
+<a href="dashboard_20260730.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-30 周四</a>
+<a href="dashboard_20260729.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-29 周三</a>
+<a href="dashboard_20260728.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-28 周二</a>
+<a href="dashboard_20260727.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-27 周一</a>
+<a href="dashboard_20260724.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-24 周五</a>
+<a href="dashboard_20260723.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-23 周四</a>
+<a href="dashboard_20260722.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-22 周三</a>
+<a href="dashboard_20260721.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-21 周二</a>
+<a href="dashboard_20260720.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-20 周一</a>
+<a href="dashboard_20260717.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-17 周五</a>
+<a href="dashboard_20260716.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-16 周四</a>
+<a href="dashboard_20260715.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-15 周三</a>
+<a href="dashboard_20260714.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-14 周二</a>
+<a href="dashboard_20260713.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-13 周一</a>
+<a href="dashboard_20260710.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-10 周五</a>
+<a href="dashboard_20260709.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-09 周四</a>
+<a href="dashboard_20260701.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-07-01 周三</a>
+<a href="dashboard_20260630.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-30 周二</a>
+<a href="dashboard_20260629.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-29 周一</a>
+<a href="dashboard_20260626.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-26 周五</a>
+<a href="dashboard_20260625.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-25 周四</a>
+<a href="dashboard_20260624.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-24 周三</a>
+<a href="dashboard_20260623.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-23 周二</a>
+<a href="dashboard_20260622.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-22 周一</a>
+<a href="dashboard_20260619.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-19 周五</a>
+<a href="dashboard_20260618.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-18 周四</a>
+<a href="dashboard_20260617.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-17 周三</a>
+<a href="dashboard_20260616.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-16 周二</a>
+<a href="dashboard_20260615.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-15 周一</a>
+<a href="dashboard_20260612.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-12 周五</a>
+<a href="dashboard_20260611.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-11 周四</a>
+<a href="dashboard_20260610.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-10 周三</a>
+<a href="dashboard_20260609.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-09 周二</a>
+<a href="dashboard_20260608.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-08 周一</a>
+<a href="dashboard_20260605.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-05 周五</a>
+<a href="dashboard_20260604.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-04 周四</a>
+<a href="dashboard_20260603.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-03 周三</a>
+<a href="dashboard_20260602.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-02 周二</a>
+<a href="dashboard_20260601.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-06-01 周一</a>
+<a href="dashboard_20260529.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-29 周五</a>
+<a href="dashboard_20260528.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-28 周四</a>
+<a href="dashboard_20260527.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-27 周三</a>
+<a href="dashboard_20260526.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-26 周二</a>
+<a href="dashboard_20260525.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-25 周一</a>
+<a href="dashboard_20260522.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-22 周五</a>
+<a href="dashboard_20260521.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-21 周四</a>
+<a href="dashboard_20260520.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-20 周三</a>
+<a href="dashboard_20260519.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-19 周二</a>
+<a href="dashboard_20260518.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-18 周一</a>
+<a href="dashboard_20260515.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-15 周五</a>
+<a href="dashboard_20260514.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-14 周四</a>
+<a href="dashboard_20260513.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-13 周三</a>
+<a href="dashboard_20260512.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-12 周二</a>
+<a href="dashboard_20260511.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-11 周一</a>
+<a href="dashboard_20260508.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-08 周五</a>
+<a href="dashboard_20260507.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-07 周四</a>
+<a href="dashboard_20260506.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-06 周三</a>
+<a href="dashboard_20260505.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-05 周二</a>
+<a href="dashboard_20260504.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-04 周一</a>
+<a href="dashboard_20260501.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-05-01 周五</a>
+<a href="dashboard_20260430.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-30 周四</a>
+<a href="dashboard_20260429.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-29 周三</a>
+<a href="dashboard_20260428.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-28 周二</a>
+<a href="dashboard_20260427.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-27 周一</a>
+<a href="dashboard_20260424.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-24 周五</a>
+<a href="dashboard_20260423.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-23 周四</a>
+<a href="dashboard_20260422.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-22 周三</a>
+<a href="dashboard_20260421.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-21 周二</a>
+<a href="dashboard_20260420.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-20 周一</a>
+<a href="dashboard_20260417.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-17 周五</a>
+<a href="dashboard_20260416.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-16 周四</a>
+<a href="dashboard_20260415.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-15 周三</a>
+<a href="dashboard_20260414.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-14 周二</a>
+<a href="dashboard_20260413.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-13 周一</a>
+<a href="dashboard_20260410.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-10 周五</a>
+<a href="dashboard_20260409.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-09 周四</a>
+<a href="dashboard_20260408.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-08 周三</a>
+<a href="dashboard_20260407.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-07 周二</a>
+<a href="dashboard_20260406.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-06 周一</a>
+<a href="dashboard_20260403.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-03 周五</a>
+<a href="dashboard_20260402.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-04-02 周四</a>
+<a href="dashboard_20260130.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-30 周五</a>
+<a href="dashboard_20260129.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-29 周四</a>
+<a href="dashboard_20260128.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-28 周三</a>
+<a href="dashboard_20260127.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-27 周二</a>
+<a href="dashboard_20260126.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-26 周一</a>
+<a href="dashboard_20260123.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-23 周五</a>
+<a href="dashboard_20260122.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-22 周四</a>
+<a href="dashboard_20260121.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-21 周三</a>
+<a href="dashboard_20260120.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-20 周二</a>
+<a href="dashboard_20260119.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-19 周一</a>
+<a href="dashboard_20260116.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-16 周五</a>
+<a href="dashboard_20260115.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-15 周四</a>
+<a href="dashboard_20260114.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-14 周三</a>
+<a href="dashboard_20260113.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-13 周二</a>
+<a href="dashboard_20260112.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-12 周一</a>
+<a href="dashboard_20260109.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-09 周五</a>
+<a href="dashboard_20260108.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-08 周四</a>
+<a href="dashboard_20260107.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-07 周三</a>
+<a href="dashboard_20260106.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-06 周二</a>
+<a href="dashboard_20260105.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-05 周一</a>
+<a href="dashboard_20260102.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-02 周五</a>
+<a href="dashboard_20260101.html" style="background: rgba(255,255,255,0.08); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">2026-01-01 周四</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stock analysis data (will be populated by Python)
+        const stockData = [{"symbol": "688050.SH", "name": "香农芯创", "close": 41.44, "daily_change": 1.3202933985330123, "RSI": 65.62184024266935, "MACD": 0.8161592620319377, "MACD_DIF": 0.47952353829848704, "MACD_DEA": 0.0714439072825182, "MA5": 41.077999999999996, "MA10": 40.004, "MA20": 39.196000000000005, "MomentumRate": 9.658639851812644, "VolumeRatio": 0.994408463735468, "total_score": 75.16659032734265, "RSI_score": 44.37815975733065, "MACD_score": 83.16159262031938, "Trend_score": 100, "Momentum_score": 98.29319925906321, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "量能不足，等待放量"}, {"symbol": "601288.SH", "name": "农业银行", "close": 7.4, "daily_change": 1.5089163237311354, "RSI": 71.90082644628103, "MACD": 0.057638544149745424, "MACD_DIF": 0.14402327548109461, "MACD_DEA": 0.1152040034062219, "MA5": 7.366000000000001, "MA10": 7.269000000000001, "MA20": 7.083499999999999, "MomentumRate": 5.413105413105425, "VolumeRatio": 1.2530302181263382, "total_score": 69.53967675782134, "RSI_score": 37.46556473829196, "MACD_score": 75.57638544149745, "Trend_score": 100, "Momentum_score": 77.06552706552714, "Volume_score": 57.59090654379015, "signal": "HOLD", "signal_reason": "RSI偏高，A股不追涨"}, {"symbol": "002050.SZ", "name": "三花智控", "close": 32.89, "daily_change": -0.1214697843911261, "RSI": 31.72966781214207, "MACD": 0.04245869173799077, "MACD_DIF": -0.9892917939600494, "MACD_DEA": -1.0105211398290448, "MA5": 32.584, "MA10": 32.358, "MA20": 33.936, "MomentumRate": -3.0936947554507874, "VolumeRatio": 1.0721022226203794, "total_score": 62.645289065596785, "RSI_score": 78.27033218785793, "MACD_score": 75.42458691737991, "Trend_score": 75.0, "Momentum_score": 34.531526222746066, "Volume_score": 50.0, "signal": "BUY", "signal_reason": "🇨🇳 A股趋势买入: 均线多头+量能配合"}, {"symbol": "600938.SH", "name": "中国海油", "close": 33.8, "daily_change": -3.4285714285714364, "RSI": 56.59630606860157, "MACD": 0.07182599053688721, "MACD_DIF": 0.43219583272900053, "MACD_DEA": 0.3962828374605569, "MA5": 34.906000000000006, "MA10": 34.713, "MA20": 33.9085, "MomentumRate": -1.0828211881767766, "VolumeRatio": 1.1060189377165444, "total_score": 54.741569579176684, "RSI_score": 53.40369393139843, "MACD_score": 75.71825990536887, "Trend_score": 50.0, "Momentum_score": 44.585894059116114, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "300059.SZ", "name": "东方财富", "close": 17.78, "daily_change": -0.6703910614525022, "RSI": 41.66666666666665, "MACD": 0.06590399949312864, "MACD_DIF": -0.2297670956135569, "MACD_DEA": -0.2627190953601212, "MA5": 17.966, "MA10": 17.997999999999998, "MA20": 18.077, "MomentumRate": 2.893518518518518, "VolumeRatio": 1.0787257055022148, "total_score": 51.69199318417145, "RSI_score": 68.33333333333334, "MACD_score": 75.65903999493129, "Trend_score": 0, "Momentum_score": 64.4675925925926, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "条件不足，继续观望"}, {"symbol": "562500.SH", "name": "机器人ETF", "close": 0.829, "daily_change": -0.9557945041816063, "RSI": 28.773584905660357, "MACD": -0.000577188487199426, "MACD_DIF": -0.03215662467763536, "MACD_DEA": -0.031868030434035646, "MA5": 0.8234, "MA10": 0.8257999999999999, "MA20": 0.869, "MomentumRate": -3.8283062645011636, "VolumeRatio": 1.0069179434697302, "total_score": 47.33406137110306, "RSI_score": 80.8176100628931, "MACD_score": 24.994228115128006, "Trend_score": 50.0, "Momentum_score": 30.85846867749418, "Volume_score": 50.0, "signal": "HOLD", "signal_reason": "MACD未金叉，等待确认"}, {"symbol": "600660.SH", "name": "福耀玻璃", "close": 51.95, "daily_change": 1.306552262090488, "RSI": 48.076923076923094, "MACD": -0.1678394684384118, "MACD_DIF": -0.4327171487046968, "MACD_DEA": -0.3487974144854909, "MA5": 53.74400000000001, "MA10": 54.095000000000006, "MA20": 53.701499999999996, "MomentumRate": 0.5808325266214991, "VolumeRatio": 1.5209492187113602, "total_score": 45.755464286628225, "RSI_score": 61.923076923076906, "MACD_score": 23.321605315615884, "Trend_score": 25.0, "Momentum_score": 52.9041626331075, "Volume_score": 65.6284765613408, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "513300.SH", "name": "纳指ETF", "close": 2.742, "daily_change": -1.0108303249097506, "RSI": 45.02262443438914, "MACD": -0.02703569547182097, "MACD_DIF": 0.016972404232476368, "MACD_DEA": 0.030490251968386853, "MA5": 2.7702, "MA10": 2.8152999999999997, "MA20": 2.79355, "MomentumRate": -3.450704225352108, "VolumeRatio": 0.7774753784995422, "total_score": 40.82584722582917, "RSI_score": 64.97737556561086, "MACD_score": 24.72964304528179, "Trend_score": 25.0, "Momentum_score": 32.74647887323946, "Volume_score": 56.67573864501374, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "562030.SH", "name": "信创ETF", "close": 0.443, "daily_change": -1.7738359201773801, "RSI": 27.450980392156865, "MACD": -0.0027411596721766615, "MACD_DIF": -0.013851877441114768, "MACD_DEA": -0.012481297605026438, "MA5": 0.4438, "MA10": 0.45099999999999996, "MA20": 0.46765, "MomentumRate": -2.8508771929824586, "VolumeRatio": 0.6701002090894469, "total_score": 40.46290851418226, "RSI_score": 81.69934640522875, "MACD_score": 24.972588403278234, "Trend_score": 0, "Momentum_score": 35.745614035087705, "Volume_score": 59.89699372731659, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "601069.SH", "name": "西部黄金", "close": 23.42, "daily_change": -3.8982355354944542, "RSI": 39.86988847583644, "MACD": -0.14539927944747988, "MACD_DIF": -1.0666538520095799, "MACD_DEA": -0.9939542122858399, "MA5": 24.322, "MA10": 24.854999999999997, "MA20": 25.4135, "MomentumRate": -2.982601491300741, "VolumeRatio": 0.7999778384638482, "total_score": 36.95275522385393, "RSI_score": 70.13011152416357, "MACD_score": 23.5460072055252, "Trend_score": 0, "Momentum_score": 35.086992543496294, "Volume_score": 56.000664846084554, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "600489.SH", "name": "中金黄金", "close": 20.74, "daily_change": -3.1746031746031855, "RSI": 40.921052631578924, "MACD": -0.10041249214008552, "MACD_DIF": -0.8080755618130979, "MACD_DEA": -0.7578693157430552, "MA5": 21.351999999999997, "MA10": 21.721, "MA20": 22.184, "MomentumRate": -3.445065176908761, "VolumeRatio": 0.8826783307303094, "total_score": 35.16989931249528, "RSI_score": 69.07894736842107, "MACD_score": 23.995875078599145, "Trend_score": 0, "Momentum_score": 32.77467411545619, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "600036.SH", "name": "招商银行", "close": 41.82, "daily_change": -1.0879848628193023, "RSI": 60.803059273422626, "MACD": -0.05624243817843344, "MACD_DIF": 0.5295012023866263, "MACD_DEA": 0.5576224214758431, "MA5": 42.424, "MA10": 42.443, "MA20": 41.6445, "MomentumRate": 0.26372572524574306, "VolumeRatio": 1.226586227085916, "total_score": 33.85769785877477, "RSI_score": 49.196940726577374, "MACD_score": 24.437575618215664, "Trend_score": 25.0, "Momentum_score": 51.318628626228715, "Volume_score": 19.335344322852098, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "588940.SH", "name": "科创ETF", "close": 0.675, "daily_change": -3.1563845050215034, "RSI": 8.866995073891601, "MACD": -0.0037545149755331547, "MACD_DIF": -0.05441340020935492, "MACD_DEA": -0.052536142721588346, "MA5": 0.6916, "MA10": 0.7114, "MA20": 0.77015, "MomentumRate": -10.832232496697484, "VolumeRatio": 1.059573500784821, "total_score": 33.81022496019672, "RSI_score": 94.08866995073893, "MACD_score": 24.96245485024467, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "515880.SH", "name": "通信ETF", "close": 0.503, "daily_change": -5.981308411214958, "RSI": 11.403508771929793, "MACD": -0.014705256184046639, "MACD_DIF": -0.04383509484077852, "MACD_DEA": -0.0364824667487552, "MA5": 0.5224, "MA10": 0.5407, "MA20": 0.6035999999999999, "MomentumRate": -15.319865319865317, "VolumeRatio": 1.103029196391588, "total_score": 33.4501216513746, "RSI_score": 92.39766081871348, "MACD_score": 24.852947438159532, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "513310.SH", "name": "中韩半导体ETF", "close": 3.675, "daily_change": -5.03875968992249, "RSI": 9.388038942976394, "MACD": -0.15682281971659207, "MACD_DIF": -0.2767211514025778, "MACD_DEA": -0.19830974154428177, "MA5": 3.8238, "MA10": 4.039199999999999, "MA20": 4.4159500000000005, "MomentumRate": -19.88227599738391, "VolumeRatio": 0.9416499518872888, "total_score": 33.434615834836634, "RSI_score": 93.74130737134907, "MACD_score": 23.431771802834078, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "000933.SZ", "name": "神火股份", "close": 24.88, "daily_change": -1.970055161544526, "RSI": 44.117647058823536, "MACD": -0.25729587890497146, "MACD_DIF": -0.3265220440321599, "MACD_DEA": -0.19787410457967416, "MA5": 25.488, "MA10": 25.931, "MA20": 26.044999999999998, "MomentumRate": -5.757575757575757, "VolumeRatio": 0.768915750126353, "total_score": 33.29080857209148, "RSI_score": 65.88235294117646, "MACD_score": 22.427041210950286, "Trend_score": 0, "Momentum_score": 21.212121212121215, "Volume_score": 56.93252749620941, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "603283.SH", "name": "赛腾股份", "close": 34.2, "daily_change": -1.7523700086182092, "RSI": 8.844011142061305, "MACD": -0.816678656834525, "MACD_DIF": -3.1722310082840934, "MACD_DEA": -2.763891679866831, "MA5": 34.298, "MA10": 35.129, "MA20": 39.834999999999994, "MomentumRate": -12.66598569969355, "VolumeRatio": 1.1880825319357116, "total_score": 32.18744120072277, "RSI_score": 94.10399257195913, "MACD_score": 16.833213431654748, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "603993.SH", "name": "洛阳钼业", "close": 13.85, "daily_change": -2.1201413427561877, "RSI": 15.7112526539278, "MACD": -0.556184736588812, "MACD_DIF": -0.9798708437183965, "MACD_DEA": -0.7017784754239905, "MA5": 14.735999999999999, "MA10": 15.761000000000001, "MA20": 16.484, "MomentumRate": -16.616496086694763, "VolumeRatio": 0.9587675200348382, "total_score": 31.792796839632004, "RSI_score": 89.52583156404813, "MACD_score": 19.43815263411188, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "000737.SZ", "name": "北方铜业", "close": 11.5, "daily_change": -4.880066170388753, "RSI": 20.289855072463737, "MACD": -0.3688513086843974, "MACD_DIF": -0.6797009419504612, "MACD_DEA": -0.49527528760826245, "MA5": 12.028, "MA10": 12.599, "MA20": 13.3135, "MomentumRate": -15.316642120765833, "VolumeRatio": 1.126010424436907, "total_score": 31.556983372969377, "RSI_score": 86.47342995169085, "MACD_score": 21.311486913156024, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300274.SZ", "name": "阳光电源", "close": 70.51, "daily_change": -2.475795297372052, "RSI": 21.553156146179433, "MACD": -0.47541279499106537, "MACD_DIF": -5.286103195467348, "MACD_DEA": -5.048396797971815, "MA5": 74.678, "MA10": 77.051, "MA20": 80.88149999999999, "MomentumRate": -12.399055783327109, "VolumeRatio": 1.0051636215257231, "total_score": 31.175420257193945, "RSI_score": 85.63122923588038, "MACD_score": 20.245872050089346, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "518680.SH", "name": "金ETF", "close": 8.765, "daily_change": -0.5559337417744392, "RSI": 31.35451505016718, "MACD": -0.03117380136390102, "MACD_DIF": -0.14089974847603415, "MACD_DEA": -0.12531284779408364, "MA5": 8.8732, "MA10": 8.919, "MA20": 9.0458, "MomentumRate": -1.2839283703119608, "VolumeRatio": 1.7681963286477471, "total_score": 30.54183937368807, "RSI_score": 78.64548494983282, "MACD_score": 24.68826198636099, "Trend_score": 0, "Momentum_score": 43.5803581484402, "Volume_score": 5.7950917838063205, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "601138.SH", "name": "工业富联", "close": 47.91, "daily_change": -3.601609657947702, "RSI": 17.389138016940734, "MACD": -1.1890586628664535, "MACD_DIF": -3.9117003156616263, "MACD_DEA": -3.3171709842283996, "MA5": 48.374, "MA10": 49.798, "MA20": 55.2035, "MomentumRate": -13.970192135033221, "VolumeRatio": 0.938223196650674, "total_score": 30.303330938674996, "RSI_score": 88.40724132203951, "MACD_score": 13.109413371335465, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "002463.SZ", "name": "沪电股份", "close": 106.96, "daily_change": -6.967034878664002, "RSI": 30.432791389970234, "MACD": -1.5821196694010018, "MACD_DIF": -2.937473286937049, "MACD_DEA": -2.146413452236548, "MA5": 111.61399999999999, "MA10": 112.70599999999999, "MA20": 117.27050000000001, "MomentumRate": -7.697618225750778, "VolumeRatio": 1.114968873283948, "total_score": 30.05158415745317, "RSI_score": 79.56720861002977, "MACD_score": 9.178803305989982, "Trend_score": 0, "Momentum_score": 11.511908871246106, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "601127.SH", "name": "赛力斯", "close": 40.9, "daily_change": -2.619047619047621, "RSI": 38.96789922795611, "MACD": -1.0812340320856308, "MACD_DIF": -1.6415481028560066, "MACD_DEA": -1.1009310868131912, "MA5": 43.61, "MA10": 46.282000000000004, "MA20": 46.6505, "MomentumRate": -14.738378153012299, "VolumeRatio": 0.7536851186496781, "total_score": 28.521841378339452, "RSI_score": 71.03210077204389, "MACD_score": 14.187659679143692, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 57.38944644050966, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "002371.SZ", "name": "北方华创", "close": 542.0, "daily_change": -3.3850870782010434, "RSI": 16.032542206997817, "MACD": -8.951859431579692, "MACD_DIF": -29.60072436693963, "MACD_DEA": -25.124794651149784, "MA5": 567.242, "MA10": 580.604, "MA20": 615.3985, "MomentumRate": -9.714818763326234, "VolumeRatio": 0.921939904643552, "total_score": 28.14750894240739, "RSI_score": 89.31163852866813, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 1.4259061833688307, "Volume_score": 50.0, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "159509.SZ", "name": "纳指科技ETF", "close": 2.943, "daily_change": -4.417018512504067, "RSI": 44.10163339382941, "MACD": -0.062821829893693, "MACD_DIF": 0.06033603750622163, "MACD_DEA": 0.09174695245306813, "MA5": 3.1322, "MA10": 3.1829, "MA20": 3.122, "MomentumRate": -9.613022113022106, "VolumeRatio": 1.3068217815474679, "total_score": 26.906898640687288, "RSI_score": 65.89836660617058, "MACD_score": 24.37178170106307, "Trend_score": 25.0, "Momentum_score": 1.9348894348894703, "Volume_score": 17.3294554613133, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "159971.SZ", "name": "创业板ETF", "close": 0.904, "daily_change": -4.338624338624331, "RSI": 2.641509433962227, "MACD": -0.0259554823399918, "MACD_DIF": -0.06478839330514641, "MACD_DEA": -0.05181065213515051, "MA5": 0.9478, "MA10": 0.9864, "MA20": 1.06365, "MomentumRate": -14.877589453860644, "VolumeRatio": 2.1958084729109806, "total_score": 24.595887777458387, "RSI_score": 98.23899371069184, "MACD_score": 24.740445176600083, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 50, "signal": "SELL", "signal_reason": "⚠️ 放量下跌，可能见顶"}, {"symbol": "300308.SZ", "name": "中际旭创", "close": 590.11, "daily_change": -8.760455803454082, "RSI": 6.684044994758139, "MACD": -31.58244141585537, "MACD_DIF": -71.26825407072931, "MACD_DEA": -55.47703336280163, "MA5": 643.096, "MA10": 680.008, "MA20": 776.452, "MomentumRate": -24.634738186462325, "VolumeRatio": 1.6212044412261646, "total_score": 21.002771794568094, "RSI_score": 95.54397000349458, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 9.469888969345888, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300502.SZ", "name": "新易盛", "close": 258.01, "daily_change": -12.277301781585749, "RSI": 3.0206508467378086, "MACD": -21.036180207967064, "MACD_DIF": -36.59128905205489, "MACD_DEA": -26.073198948071358, "MA5": 293.04200000000003, "MA10": 317.11199999999997, "MA20": 369.925, "MomentumRate": -31.833553500660507, "VolumeRatio": 1.8132213029581077, "total_score": 20.531140038977753, "RSI_score": 97.98623276884146, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 4.669467426047305, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}, {"symbol": "300750.SZ", "name": "宁德时代", "close": 220.41, "daily_change": -3.286529179464681, "RSI": 15.18529103553395, "MACD": -8.827268828570226, "MACD_DIF": -25.00858830032729, "MACD_DEA": -20.594953886042177, "MA5": 250.28199999999998, "MA10": 269.52599999999995, "MA20": 282.71950000000004, "MomentumRate": -23.135135135135137, "VolumeRatio": 1.5318291802281154, "total_score": 20.316148627454897, "RSI_score": 89.87647264297736, "MACD_score": 0, "Trend_score": 0, "Momentum_score": 0, "Volume_score": 11.704270494297113, "signal": "SELL", "signal_reason": "⚠️ MACD死叉+趋势破位，建议清仓"}];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            if (stockData && stockData.length > 0) {
+                updateDashboard(stockData);
+            }
+        });
+
+        function updateDashboard(data) {
+            // Update time
+            document.getElementById('update-time').textContent = 
+                '数据更新时间: ' + new Date().toLocaleString('zh-CN');
+
+            // Top recommendation (Prioritize first BUY candidate, otherwise top score)
+            const topBuy = data.find(d => d.signal === 'BUY');
+            const top = topBuy || data[0];
+            
+            document.getElementById('top-symbol').textContent = top.name || top.symbol;
+            document.getElementById('top-score').textContent = top.total_score.toFixed(1);
+
+            // Indicators
+            const indicators = document.getElementById('top-indicators');
+            indicators.innerHTML = '';
+            
+            // RSI pill
+            let rsiClass = 'pill';
+            if (top.RSI < 30) rsiClass += ' success';
+            else if (top.RSI > 70) rsiClass += ' danger';
+            indicators.innerHTML += `<span class="${rsiClass}">RSI: ${top.RSI.toFixed(1)}</span>`;
+            
+            // MACD pill
+            let macdClass = top.MACD > 0 ? 'pill success' : 'pill danger';
+            indicators.innerHTML += `<span class="${macdClass}">MACD: ${top.MACD > 0 ? '金叉' : '死叉'}</span>`;
+            
+            // Trend pill
+            let trendClass = top.Trend_score >= 75 ? 'pill success' : (top.Trend_score <= 25 ? 'pill danger' : 'pill warning');
+            indicators.innerHTML += `<span class="${trendClass}">趋势: ${top.Trend_score.toFixed(0)}分</span>`;
+            
+            // Momentum pill
+            let momClass = top.MomentumRate > 0 ? 'pill success' : 'pill danger';
+            let momStr = top.MomentumRate >= 0 ? '+' + top.MomentumRate.toFixed(1) + '%' : top.MomentumRate.toFixed(1) + '%';
+            indicators.innerHTML += `<span class="${momClass}">动量: ${momStr}</span>`;
+            
+            // Volume pill
+            let volClass = 'pill';
+            let volStr = '';
+            if (top.VolumeRatio > 1.5) {
+                volClass = 'pill success';
+                volStr = '放量 (' + top.VolumeRatio.toFixed(1) + 'x)';
+            } else if (top.VolumeRatio < 0.7) {
+                volClass = 'pill warning';
+                volStr = '缩量 (' + top.VolumeRatio.toFixed(1) + 'x)';
+            } else {
+                volStr = '量比 ' + top.VolumeRatio.toFixed(1) + 'x';
+            }
+            indicators.innerHTML += `<span class="${volClass}">${volStr}</span>`;
+
+            // Render charts
+            renderScoreChart(data);
+            renderBreakdownChart(top);
+            renderRsiChart(data);
+            renderMomentumChart(data);
+
+            // Render ranking table
+            renderRankingTable(data);
+
+            // Render signals summary
+            renderSignals(data);
+
+            // Render portfolio
+            renderPortfolio(data);
+
+            // Render reasons
+            renderReasons(top);
+        }
+
+        function renderSignals(data) {
+            const buyContainer = document.getElementById('buy-candidates');
+            const sellContainer = document.getElementById('sell-candidates');
+            
+            const buyCandidates = data.filter(d => d.signal === 'BUY');
+            const sellCandidates = data.filter(d => d.signal === 'SELL');
+            
+            // 建议仓位比例 (按排名分配)
+            const positionPcts = [30, 25, 20, 15, 10];
+            
+            // Render buy candidates with position percentage
+            if (buyCandidates.length > 0) {
+                buyContainer.innerHTML = buyCandidates.slice(0, 5).map((stock, i) => {
+                    const pct = positionPcts[i] || 10;
+                    return `
+                    <div class="signal-item buy">
+                        <span class="symbol">${stock.name || stock.symbol}</span>
+                        <span class="reason">${stock.signal_reason || ''}</span>
+                        <span style="background: rgba(0,212,255,0.2); color: #00d4ff; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; margin-right: 8px;">建议${pct}%</span>
+                        <span class="score">${stock.total_score.toFixed(1)}分</span>
+                    </div>`;
+                }).join('');
+            } else {
+                buyContainer.innerHTML = '<div class="no-signal">无明确买入信号</div>';
+            }
+            
+            // Render sell candidates
+            if (sellCandidates.length > 0) {
+                sellContainer.innerHTML = sellCandidates.slice(0, 5).map(stock => `
+                    <div class="signal-item sell">
+                        <span class="symbol">${stock.name || stock.symbol}</span>
+                        <span class="reason">${stock.signal_reason || ''}</span>
+                        <span class="score">${stock.total_score.toFixed(1)}分</span>
+                    </div>
+                `).join('');
+            } else {
+                sellContainer.innerHTML = '<div class="no-signal">无明确卖出信号</div>';
+            }
+        }
+
+        function renderScoreChart(data) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: '综合得分',
+                        data: data.map(d => d.total_score),
+                        backgroundColor: data.map((d, i) => 
+                            i === 0 ? 'rgba(0, 212, 255, 0.8)' : 'rgba(0, 212, 255, 0.3)'
+                        ),
+                        borderColor: 'rgba(0, 212, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#a0a0b0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderBreakdownChart(top) {
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['RSI', 'MACD', '趋势', '动量', '量能'],
+                    datasets: [{
+                        data: [
+                            top.RSI_score * 0.20,
+                            top.MACD_score * 0.20,
+                            top.Trend_score * 0.20,
+                            top.Momentum_score * 0.20,
+                            top.Volume_score * 0.20
+                        ],
+                        backgroundColor: [
+                            'rgba(0, 212, 255, 0.8)',
+                            'rgba(123, 44, 191, 0.8)',
+                            'rgba(0, 255, 136, 0.8)',
+                            'rgba(255, 217, 61, 0.8)',
+                            'rgba(255, 136, 0, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRsiChart(data) {
+            const ctx = document.getElementById('rsiChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: 'RSI',
+                        data: data.map(d => d.RSI),
+                        backgroundColor: data.map(d => {
+                            if (d.RSI < 30) return 'rgba(0, 255, 136, 0.7)';
+                            if (d.RSI > 70) return 'rgba(255, 107, 107, 0.7)';
+                            return 'rgba(255, 217, 61, 0.7)';
+                        }),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 30,
+                                    yMax: 30,
+                                    borderColor: 'rgba(0, 255, 136, 0.5)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: 'rgba(255, 107, 107, 0.5)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#a0a0b0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMomentumChart(data) {
+            const ctx = document.getElementById('momentumChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name || d.symbol.replace('.US', '')),
+                    datasets: [{
+                        label: '10日动量 (%)',
+                        data: data.map(d => d.MomentumRate),
+                        backgroundColor: data.map(d => 
+                            d.MomentumRate >= 0 ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 107, 107, 0.7)'
+                        ),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { 
+                                color: '#a0a0b0',
+                                callback: value => value + '%'
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0a0b0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRankingTable(data) {
+            const tbody = document.getElementById('ranking-tbody');
+            tbody.innerHTML = data.map((d, i) => {
+                const rankClass = i < 3 ? `rank-${i + 1}` : '';
+                const changeClass = d.daily_change >= 0 ? 'positive' : 'negative';
+                const changeStr = d.daily_change >= 0 ? '+' + d.daily_change.toFixed(2) + '%' : d.daily_change.toFixed(2) + '%';
+                const macdStr = d.MACD > 0 ? '金叉' : '死叉';
+                const momStr = d.MomentumRate >= 0 ? '+' + d.MomentumRate.toFixed(1) + '%' : d.MomentumRate.toFixed(1) + '%';
+                
+                // Volume ratio with color
+                let volClass = '';
+                let volStr = d.VolumeRatio.toFixed(1) + 'x';
+                if (d.VolumeRatio > 1.5) {
+                    volClass = 'positive';
+                    volStr = '放量 ' + volStr;
+                } else if (d.VolumeRatio < 0.7) {
+                    volClass = 'negative';
+                    volStr = '缩量 ' + volStr;
+                }
+                
+                return `
+                    <tr>
+                        <td class="rank ${rankClass}">#${i + 1}</td>
+                        <td class="symbol">${d.name || d.symbol}</td>
+                        <td>$${d.close.toFixed(2)}</td>
+                        <td class="${changeClass}">${changeStr}</td>
+                        <td>${d.RSI.toFixed(1)}</td>
+                        <td>${macdStr}</td>
+                        <td>${d.Trend_score.toFixed(0)}</td>
+                        <td class="${d.MomentumRate >= 0 ? 'positive' : 'negative'}">${momStr}</td>
+                        <td class="${volClass}">${volStr}</td>
+                        <td class="score">${d.total_score.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderReasons(top) {
+            document.getElementById('reason-title').textContent = `为什么推荐 ${top.name || top.symbol}？`;
+            
+            const reasons = [];
+            
+            // RSI
+            let rsiReason = '';
+            if (top.RSI < 30) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>超卖区(&lt;30)</strong>，股价可能被低估，是较好的买入时机`;
+            } else if (top.RSI < 50) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>偏低区(30-50)</strong>，存在上涨空间`;
+            } else if (top.RSI < 70) {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>正常区间(50-70)</strong>，趋势健康`;
+            } else {
+                rsiReason = `RSI=${top.RSI.toFixed(1)} 处于<strong>超买区(&gt;70)</strong>，需注意回调风险`;
+            }
+            reasons.push({ emoji: '📈', text: `<strong>RSI分析:</strong> ${rsiReason}` });
+            
+            // MACD
+            let macdReason = top.MACD > 0 
+                ? `DIF>DEA 形成<strong>金叉</strong>，买入信号；MACD柱=${top.MACD.toFixed(2)}>0，<strong>多头占优</strong>`
+                : `DIF<DEA 形成<strong>死叉</strong>，卖出信号；MACD柱=${top.MACD.toFixed(2)}<0，<strong>空头占优</strong>`;
+            reasons.push({ emoji: '📊', text: `<strong>MACD分析:</strong> ${macdReason}` });
+            
+            // Trend
+            let trendReason = '';
+            if (top.Trend_score >= 100) {
+                trendReason = '<strong>完美多头排列</strong>(价格>MA5>MA10>MA20)，强势上涨趋势';
+            } else if (top.Trend_score >= 75) {
+                trendReason = '价格站上短中期均线，<strong>趋势向好</strong>';
+            } else if (top.Trend_score <= 25) {
+                trendReason = '<strong>空头排列</strong>，下跌趋势';
+            } else {
+                trendReason = '均线交织，趋势不明朗';
+            }
+            reasons.push({ emoji: '📉', text: `<strong>趋势分析:</strong> ${trendReason}` });
+            
+            // Momentum
+            let momReason = '';
+            if (top.MomentumRate > 5) {
+                momReason = `10日动量+${top.MomentumRate.toFixed(1)}%，<strong>强劲上涨动能</strong>`;
+            } else if (top.MomentumRate > 0) {
+                momReason = `10日动量+${top.MomentumRate.toFixed(1)}%，<strong>温和上涨</strong>`;
+            } else if (top.MomentumRate > -5) {
+                momReason = `10日动量${top.MomentumRate.toFixed(1)}%，<strong>小幅回调</strong>`;
+            } else {
+                momReason = `10日动量${top.MomentumRate.toFixed(1)}%，<strong>下跌动能较强</strong>`;
+            }
+            reasons.push({ emoji: '🚀', text: `<strong>动量分析:</strong> ${momReason}` });
+            
+            // Volume
+            let volReason = '';
+            if (top.VolumeRatio > 2.0) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>显著放量</strong>，市场关注度高`;
+            } else if (top.VolumeRatio > 1.5) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>温和放量</strong>，交投活跃`;
+            } else if (top.VolumeRatio > 0.7) {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，成交量正常`;
+            } else {
+                volReason = `量比${top.VolumeRatio.toFixed(1)}x，<strong>明显缩量</strong>，交投清淡`;
+            }
+            reasons.push({ emoji: '📊', text: `<strong>量能分析:</strong> ${volReason}` });
+            
+            // Summary
+            let summary = '';
+            if (top.total_score >= 80) {
+                summary = '综合指标显示<strong>强烈买入信号</strong>';
+            } else if (top.total_score >= 60) {
+                summary = '综合指标<strong>偏向看多</strong>';
+            } else if (top.total_score >= 40) {
+                summary = '综合指标中性，<strong>建议观望</strong>';
+            } else {
+                summary = '综合指标偏空，<strong>暂不建议买入</strong>';
+            }
+            reasons.push({ emoji: '💡', text: `<strong>综合评价:</strong> ${summary}` });
+            
+            document.getElementById('reason-content').innerHTML = reasons.map(r => `
+                <div class="reason-item">
+                    <span class="emoji">${r.emoji}</span>
+                    <span class="text">${r.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderPortfolio(data) {
+            const container = document.getElementById('portfolio-card');
+            const listContainer = document.getElementById('portfolio-list');
+            
+            // 1. 筛选逻辑: BUY + 优质 HOLD (Score>=65 && Trend>=60)
+            let portfolio = data.filter(d => 
+                d.signal === 'BUY' || 
+                (d.signal === 'HOLD' && d.total_score >= 65 && d.Trend_score >= 60)
+            );
+            
+            if (portfolio.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            // 2. 权重计算
+            let totalWeightScore = 0;
+            portfolio = portfolio.map(d => {
+                let weightScore = d.total_score;
+                if (d.signal === 'BUY') weightScore *= 1.2; // 给予 BUY 信号 20% 的权重奖励
+                totalWeightScore += weightScore;
+                return { ...d, weightScore };
+            });
+            
+            // 归一化并排序
+            portfolio.forEach(d => {
+                d.weight = (d.weightScore / totalWeightScore) * 100;
+            });
+            portfolio.sort((a, b) => b.weight - a.weight);
+            
+            // 3. 渲染列表
+            const colors = ['#00d4ff', '#7b2cbf', '#00ff88', '#ffd93d', '#ff6b6b', '#ff9f43', '#54a0ff'];
+            listContainer.innerHTML = portfolio.map((stock, i) => {
+                const color = colors[i % colors.length];
+                const typeLabel = stock.signal === 'BUY' ? '🟢 信号买入' : '⚪️ 强势持有';
+                return `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 50px; font-weight: bold; color: ${color};">${(stock.weight).toFixed(1)}%</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-weight: 600;">${stock.name || stock.symbol}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${typeLabel}</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; width: ${stock.weight}%; background: ${color};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 4. 渲染图表
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            if (window.portfolioChartInstance) window.portfolioChartInstance.destroy();
+            
+            window.portfolioChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: portfolio.map(d => d.name || d.symbol),
+                    datasets: [{
+                        data: portfolio.map(d => d.weight),
+                        backgroundColor: portfolio.map((_, i) => colors[i % colors.length]),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
